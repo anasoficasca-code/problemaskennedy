@@ -58,7 +58,7 @@
   .disc{fill:url(#discg);stroke:none}
   .ring{fill:none;stroke-width:3.2}
   .node.hub .disc{fill:var(--c)}
-  .node.root .disc{fill:#f4f4f4}
+  .node.root .disc{fill:#ff5a5f}
   .ico{fill:none;stroke:var(--c);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
   .node.hub .ico{stroke:#0a0a0a;stroke-width:1.8}.node.root .ico{stroke:#0a0a0a;stroke-width:1.6}
   .halo{fill:none;stroke:var(--c);stroke-width:1.6;transform-box:fill-box;transform-origin:center;opacity:0;pointer-events:none}
@@ -73,6 +73,7 @@
   .badge circle{fill:#000;stroke:var(--c);stroke-width:1.6}
   .badge text{fill:#fff;font:500 11px var(--mono);text-anchor:middle;dominant-baseline:central;pointer-events:none}
   .node.hub .badge circle,.node.root .badge circle{fill:#0a0a0a;stroke:#fff}
+  .node.root .ico{stroke:#0a0a0a}
   .lbl{font:500 12.5px var(--sans);fill:#e8e8e8;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:#000;stroke-width:4.5px;stroke-linejoin:round}
   .node.hub .lbl{font:700 14px var(--sans);fill:#fff}
   .node.root .lbl{font:700 15px var(--sans);fill:#fff}
@@ -283,7 +284,7 @@ function icon(name, sw=1.7){
 }
 const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 const isMobile = () => matchMedia("(max-width:760px)").matches;
-const SC = .66;   // escala de las posiciones del tablero
+const SC = .98;   // escala de las posiciones del tablero
 
 /* ============ construcción del grafo ============ */
 const nodes = ND.map((d,i)=>({ id:i, key:d[0], t:d[1], s:d[2]||d[1], i:d[3], g:d[4], mx:d[5], my:d[6], vis:false, open:false, by:null, nei:[], inn:[], out:[], und:[], extra:[], groups:[d[4]] }));
@@ -300,7 +301,7 @@ edges.forEach(e=>{
 K.infra.extra.push(K.mono); K.mono.loose=true;           // la monoexportación no tiene conectores en el tablero: aparece junto a su vecina
 nodes.forEach(n=>{
   n.r = n===root?62 : HUBS.includes(n)?46 : n.loose?27 : 31;
-  n.color = n.g? G[n.g].color : "#f4f4f4";
+  n.color = n.g? G[n.g].color : "#ff5a5f";
   n.bridge = n.groups.length>1; n.hub = HUBS.includes(n);
   n.lines = wrap(n.s, n===root?18:n.hub?16:15);
   n.sp = .5+Math.random()*.7; n.ph = Math.random()*6.28;
@@ -315,7 +316,7 @@ $("#logo").innerHTML=icon("Network",1.9);
 $("#bProp").innerHTML=icon("Play",2)+"Propagar"; $("#bAll").innerHTML=icon("Network",2)+"Mostrar toda la red"; $("#bReset").innerHTML=icon("RotateCcw",2)+"Reiniciar";
 $("#bIn").innerHTML=icon("Plus",2.2); $("#bOut").innerHTML=icon("Minus",2.2); $("#bFit").innerHTML=icon("Maximize",2);
 $("#iClose").innerHTML=icon("X",2); $("#bSearch").innerHTML=icon("Search",2);
-$("#hint").innerHTML=icon("MousePointerClick",2)+"<span>Toca la esfera blanca para descubrir la red</span>";
+$("#hint").innerHTML=icon("MousePointerClick",2)+"<span>Toca el nodo rojo central para descubrir la red</span>";
 $("#mP").innerHTML=icon("Play",2.2)+"Propagar"; $("#mAll").innerHTML=icon("Network",2)+"Toda la red"; $("#mReset").innerHTML=icon("RotateCcw",2)+"Reiniciar"; $("#mLeg").innerHTML=icon("Layers",2)+"Leyenda";
 $("#dsearch").innerHTML=icon("Search",2)+`<input id="q" placeholder="Buscar variable…" autocomplete="off"><div id="res"></div>`;
 
@@ -341,12 +342,13 @@ nodes.forEach(n=>{
   const g=document.createElementNS(NS,"g"); g.setAttribute("class","node"+(n===root?" root":"")+(n.hub?" hub":"")+(n.loose?" loose":"")); g.style.setProperty("--c",n.color);
   const ringStroke = n.bridge ? `url(#rg-${n.key})` : n.color;
   const ic = lucide.icons[n.i]; const s=(n.r*(n===root?1.0:n.hub?1.0:1.0))/24;
+  const sq=(cls,r,extra="")=>`<rect class="${cls}" x="${-r}" y="${-r}" width="${2*r}" height="${2*r}" rx="${(r*.42).toFixed(1)}" ${extra}/>`;
   const body=`<g class="body"><g class="hov">
-      <circle class="halo" r="${n.r+8}"/><circle class="pg" r="${n.r}"/>
-      <circle class="disc" r="${n.r}"/>
-      <circle class="ring" r="${n.r}" stroke="${n.hub||n===root?"none":ringStroke}"/>
-      ${n.hub&&n.bridge?`<circle class="ring" r="${n.r}" stroke="${ringStroke}"/>`:""}
-      <circle class="selr" r="${n.r+7}"/>
+      ${sq("halo",n.r+8)}${sq("pg",n.r)}
+      ${sq("disc",n.r)}
+      ${sq("ring",n.r,`stroke="${n.hub||n===root?"none":ringStroke}"`)}
+      ${n.hub&&n.bridge?sq("ring",n.r,`stroke="${ringStroke}"`):""}
+      ${sq("selr",n.r+7)}
       <g class="ico" transform="translate(${-12*s*0.9},${-12*s*0.9}) scale(${s*0.9})">${ic?ic[2].map(([t,a])=>`<${t} ${Object.entries(a).map(([k,v])=>`${k}="${v}"`).join(" ")}/>`).join(""):""}</g>
       <g class="badge" transform="translate(${n.r*.78},${-n.r*.78})"><circle r="11"/><text></text></g>
     </g></g>
@@ -458,7 +460,7 @@ $("#bSearch").onclick=()=>{ $("#dsearch").classList.toggle("show"); if($("#dsear
 const label=n=>n.s;
 function relRow(o,kind){ const m=o.n; return `<div class="rel${m.vis?"":" hid"}" data-k="${m.key}" style="--c:${m.color}"><span class="ri">${icon(m.i)}</span><span>${label(m)}</span><small>${m.vis?"":"oculta"}</small></div>`; }
 function inspHTML(n){
-  const chips=n.groups.map(g=>`<span class="chip" style="--c:${G[g].color}"><i>${icon(G[g].icon,2.4)}</i>${G[g].short}</span>`).join("");
+  const chips=n.groups.filter(g=>g>0).map(g=>`<span class="chip" style="--c:${G[g].color}"><i>${icon(G[g].icon,2.4)}</i>${G[g].short}</span>`).join("");
   const sec=(ic,t,arr)=>arr.length?`<div class="isec">${icon(ic,2)}${t}<b>${arr.length}</b></div>${arr.map(o=>relRow(o)).join("")}`:"";
   return `<div class="ih" style="--c:${n.color}"><div class="it">${icon(n.i,1.8)}</div><div><div class="ic">${n===root?"Fenómeno central":n.loose?"Variable sin conexiones":"Variable"}</div><h2>${n.t}</h2></div></div>
   ${n===root?"":`<div class="chips">${chips}</div>`}
