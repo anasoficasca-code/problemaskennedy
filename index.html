@@ -3,404 +3,469 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Problemáticas de Kennedy</title>
+<title>Problemáticas de Kennedy · un viaje</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Caveat+Brush&family=Patrick+Hand&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#000; --fg:#f4f4f4; --muted:#8a8a8a; --line:#2e2e2e;
-    --root:#ffffff; --p1:#ff5a36; --p2:#ffd23f; --p3:#3ec6ff;
-    --f:"Space Grotesk","Segoe UI",system-ui,sans-serif;
+    --cream:#efe4cf; --tom:#ff5a36; --mus:#ffc531; --sky:#4cb5e8; --teal:#2a9d8f; --pink:#ff8fb3; --ink:#151515;
+    --disp:"Bowlby One","Arial Black",sans-serif; --hand:"Caveat Brush","Patrick Hand",cursive; --txt:"Patrick Hand","Segoe UI",sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--f);
+  html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--cream);font-family:var(--txt);
     user-select:none;-webkit-user-select:none}
-  #stage{position:fixed;inset:0;cursor:grab;
-    background-color:#000;background-image:radial-gradient(#202020 1px,transparent 1.2px);background-size:28px 28px}
-  #stage.drag{cursor:grabbing}
-  svg#graph{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+  #viewport{position:fixed;inset:0;overflow:hidden;background:#000}
+  #cam{position:absolute;left:0;top:0;width:6800px;height:900px;transform-origin:0 0;will-change:transform}
+  .layer{position:absolute;left:0;top:0;width:6800px;height:1500px;will-change:transform}
+  .smooth #cam,.smooth .layer{transition:transform 1.3s cubic-bezier(.66,0,.18,1)}
+  #grain{position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.33;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.4 -.35'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+  #vig{position:fixed;inset:0;pointer-events:none;z-index:49;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.65) 100%)}
 
-  /* ---- aristas ---- */
-  .link{stroke:#3a3a3a;stroke-width:1.6;fill:none;animation:fade .6s;transition:stroke .2s,opacity .25s}
-  .link.hot{stroke:var(--c);stroke-width:3;stroke-dasharray:8 7;animation:flow .9s linear infinite}
-  .link.dim{opacity:.1}
-  @keyframes flow{to{stroke-dashoffset:-15}}
-  @keyframes fade{from{opacity:0}}
+  /* ---------- secciones ---------- */
+  .chap,.hero{position:absolute;top:0;width:1700px;height:900px}
+  .chap{z-index:2}
+  .chap svg.lines{position:absolute;left:0;top:0;width:1700px;height:900px;overflow:visible;pointer-events:none}
+  .conn{fill:none;stroke:var(--c);stroke-width:4.5;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:.95;
+    transition:stroke-dashoffset .8s cubic-bezier(.5,0,.2,1) var(--dl,0s),opacity .3s}
+  .conn.on{stroke-dashoffset:0}
+  .conn.dim{opacity:.12}
 
-  /* ---- nodos ---- */
-  .node{cursor:pointer;transition:opacity .25s}
-  .node.dim{opacity:.14}
-  .body{transform-box:fill-box;transform-origin:center;animation:pop .65s cubic-bezier(.2,1.25,.3,1)}
-  @keyframes pop{from{transform:scale(0)}}
-  .hov{transform-box:fill-box;transform-origin:center;transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
-  .node:hover .hov{transform:scale(1.14)}
-  .disc{stroke-width:3;transition:stroke-width .2s}
-  .d0 .disc{fill:#fff;stroke:#fff}
-  .d0 .ico{color:#000}
-  .d1 .disc{fill:var(--c);stroke:var(--c)}
-  .d1 .ico{color:#000}
-  .d2 .disc{fill:#000;stroke:var(--c)}
-  .d2 .ico{color:var(--c)}
-  .node:hover .disc{stroke-width:5}
-  .ico{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
-  .ping{fill:none;stroke:var(--c);stroke-width:2;transform-box:fill-box;transform-origin:center;animation:ping 2.2s ease-out infinite;pointer-events:none}
-  .d0 .ping{stroke:#fff}
-  .node.open .ping{display:none}
-  @keyframes ping{from{transform:scale(1);opacity:.85}to{transform:scale(1.9);opacity:0}}
-  .node.flash .hov{animation:flash .5s ease-in-out 4}
-  @keyframes flash{50%{transform:scale(1.4)}}
-  .badge circle{fill:var(--c);stroke:#000;stroke-width:2.5}
-  .d0 .badge circle{fill:var(--p1)}
-  .badge text{fill:#000;font:700 11px var(--f);text-anchor:middle;dominant-baseline:central;pointer-events:none}
-  .lbl{font:500 13px var(--f);fill:#eee;text-anchor:middle;pointer-events:none;
-    paint-order:stroke;stroke:#000;stroke-width:5px;stroke-linejoin:round}
-  .d1 .lbl{font:700 14px var(--f);fill:#fff;text-transform:uppercase;letter-spacing:.6px}
-  .d0 .lbl{font:700 17px var(--f);fill:#fff;text-transform:uppercase;letter-spacing:.8px}
+  .ctitle{position:absolute;left:150px;top:14px;z-index:3;pointer-events:none}
+  .ctitle .no{font:400 22px var(--hand);color:var(--c);letter-spacing:2px}
+  .ctitle h2{font:400 30px/1.05 var(--disp);color:var(--cream);text-shadow:4px 4px 0 var(--c);max-width:1300px;letter-spacing:.5px}
 
-  /* ---- interfaz (plana, sin brillos) ---- */
-  #title{position:fixed;left:32px;top:28px;pointer-events:none;z-index:5}
-  #title h1{font:700 44px/.95 var(--f);letter-spacing:-1.5px;text-transform:uppercase}
-  #title h1 span{color:var(--p1)}
-  #title p{font:400 13px/1.5 var(--f);color:var(--muted);margin-top:14px;max-width:290px}
-  #search{position:fixed;left:50%;top:26px;transform:translateX(-50%);z-index:7;width:min(380px,calc(100vw - 420px))}
-  #q{width:100%;background:#000;color:#fff;border:1.5px solid #3a3a3a;border-radius:0;padding:12px 14px;font:500 14px var(--f);outline:none;transition:border-color .2s}
-  #q:focus{border-color:#fff}
-  #q::placeholder{color:#777}
-  #res{background:#0b0b0b;border:1.5px solid #fff;border-top:0;display:none;max-height:300px;overflow:auto}
-  #res.show{display:block}
-  #res div{padding:10px 14px;font:400 13px/1.35 var(--f);cursor:pointer;display:flex;gap:10px;align-items:center;border-left:4px solid var(--c)}
-  #res div:hover,#res div.act{background:#1c1c1c}
-  #hint{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);z-index:5;pointer-events:none;
-    font:500 13px var(--f);letter-spacing:2px;text-transform:uppercase;color:#000;background:#fff;padding:10px 16px;
-    animation:bounce 1.6s ease-in-out infinite;transition:opacity .4s}
-  #hint.hide{opacity:0}
-  @keyframes bounce{50%{transform:translate(-50%,-8px)}}
-  #legend{position:fixed;left:32px;bottom:30px;z-index:5;display:flex;flex-direction:column;gap:10px;font:400 13px var(--f);color:#cfcfcf}
-  #legend span{display:flex;align-items:center;gap:12px}
-  #legend i{width:14px;height:14px;border-radius:50%;display:inline-block;background:currentColor}
-  #legend em{font-style:normal;color:#d6d6d6}
-  #tools{position:fixed;right:24px;bottom:24px;z-index:5;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-  button{background:#000;color:#fff;border:1.5px solid #3a3a3a;border-radius:0;padding:11px 16px;
-    font:500 12px var(--f);letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
-  button:hover{background:#fff;color:#000;border-color:#fff}
-  #card{position:fixed;right:24px;top:24px;width:min(340px,calc(100vw - 48px));z-index:6;padding:20px 22px 20px;
-    background:#0b0b0b;border:1.5px solid #2e2e2e;border-left:8px solid var(--c,#fff);
-    opacity:0;transform:translateX(14px);transition:opacity .2s,transform .2s;pointer-events:none}
-  #card.show{opacity:1;transform:none}
-  #card .tag{font:500 11px var(--f);letter-spacing:1.6px;text-transform:uppercase;color:var(--c)}
-  #card h2{font:700 21px/1.2 var(--f);margin:8px 0 14px;letter-spacing:-.3px}
-  #card .path{font:400 13px/1.55 var(--f);color:#9a9a9a;border-top:1px solid #262626;padding-top:12px}
-  #card .path b{color:#e4e4e4;font-weight:500}
-  #card .more{margin-top:12px;font:500 11px var(--f);letter-spacing:1.4px;text-transform:uppercase;color:#fff}
-  @media (max-width:900px){
-    #search{left:auto;right:24px;transform:none;top:auto;bottom:80px;width:calc(100vw - 48px)}
-    #res{position:absolute;bottom:100%;border-top:1.5px solid #fff;border-bottom:0}
-    #hint{bottom:150px}
-  }
-  @media (max-width:640px){
-    #title h1{font-size:30px} #title p{display:none} #legend{display:none}
-    #card{top:auto;bottom:140px;right:12px;left:12px;width:auto}
-  }
+  /* objeto grande (el problema) */
+  .big{position:absolute;left:52px;width:250px;height:250px;margin-top:-125px;cursor:pointer;z-index:4;
+    transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+  .big:hover{transform:rotate(-3deg) scale(1.05)}
+  .big svg.art{width:250px;height:250px;display:block;overflow:visible;filter:drop-shadow(7px 7px 0 var(--c))}
+  .big .ring{position:absolute;left:-22px;top:-22px;width:294px;height:294px;pointer-events:none}
+  .big .ring circle{fill:none;stroke:var(--cream);stroke-width:3;stroke-dasharray:3 14;stroke-linecap:round}
+  .big .ring{animation:spin 26s linear infinite}
+  .big.open .ring{opacity:0}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .big .cnt,.tag .cnt{position:absolute;min-width:34px;height:34px;padding:0 8px;border-radius:50% 46% 52% 48%;
+    background:var(--cream);color:var(--ink);font:400 20px/34px var(--hand);text-align:center;border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--c)}
+  .big .cnt{right:8px;bottom:6px}
+  .tag .cnt{right:-14px;bottom:-14px;z-index:3}
+
+  .chint{position:absolute;left:46px;width:260px;text-align:center;font:400 28px/1.05 var(--hand);color:var(--c);z-index:4;
+    pointer-events:none;transform:rotate(-4deg);animation:chb 2.2s ease-in-out infinite;transition:opacity .4s}
+  .chint.gone{opacity:0}
+  @keyframes chb{50%{transform:rotate(-4deg) translateY(-8px)}}
+  /* papeles recortados */
+  .tag{position:absolute;width:182px;z-index:5;cursor:pointer;outline:none;
+    transform:translateY(-50%) rotate(var(--r)) scale(.3);opacity:0;pointer-events:none;
+    filter:drop-shadow(6px 6px 0 var(--c))}
+  .tag.in{opacity:1;pointer-events:auto;transform:translateY(-50%) rotate(var(--r)) scale(1);
+    transition:transform .6s cubic-bezier(.2,1.7,.4,1) var(--dl,0s),opacity .15s var(--dl,0s)}
+  .tag.in:hover,.tag.in:focus-visible{transform:translateY(-50%) rotate(0deg) scale(1.08);z-index:9;transition-delay:0s}
+  .tag.dim{opacity:.22;filter:none}
+  .tag .paper{background:var(--cream);color:#1a1a1a;padding:14px 14px 13px 44px;font:400 18.5px/1.12 var(--txt);
+    clip-path:var(--clip);min-height:62px;display:flex;align-items:center}
+  .tag.d1 .paper{background:var(--c);color:#111;font-weight:700}
+  .tag.has:not(.open) .paper{animation:wig 3.2s ease-in-out infinite}
+  @keyframes wig{0%,86%,100%{transform:none}90%{transform:rotate(-2.2deg) translateX(-2px)}95%{transform:rotate(1.8deg) translateX(2px)}}
+  .tag::before{content:"";position:absolute;left:50%;top:-11px;width:58px;height:20px;margin-left:-29px;z-index:4;
+    background:rgba(239,228,207,.6);transform:rotate(var(--tr,-4deg));clip-path:polygon(0 8%,6% 0,94% 5%,100% 0,98% 92%,92% 100%,4% 94%,0 100%)}
+  .stk{position:absolute;left:-18px;top:-16px;width:52px;height:52px;z-index:3;display:grid;place-items:center;
+    background:var(--c);color:#111;border:3px solid #111;border-radius:52% 48% 55% 45% / 48% 55% 45% 52%;transform:rotate(-8deg)}
+  .tag.d1 .stk{background:var(--cream)}
+  .stk svg{width:28px;height:28px}
+
+  /* ---------- portada ---------- */
+  .hero{z-index:2}
+  .hero h1{position:absolute;left:64px;top:56px;font:400 148px/.88 var(--disp);color:var(--cream);transform:rotate(-3deg);
+    text-shadow:9px 9px 0 var(--tom);letter-spacing:-2px;pointer-events:none}
+  .hero .kicker{position:absolute;left:78px;top:30px;font:400 30px var(--hand);color:var(--mus);letter-spacing:3px;transform:rotate(-2deg)}
+  .hero .sub{position:absolute;left:70px;top:372px;width:520px;font:400 31px/1.15 var(--hand);color:var(--cream);transform:rotate(-1.5deg)}
+  .hero .sub b{color:var(--sky);font-weight:400}
+  .hero .where{position:absolute;left:70px;top:520px;font:400 22px var(--txt);color:var(--cream);letter-spacing:1px;text-shadow:0 0 8px #000,0 0 12px #000}
+  .hero svg.fr{position:absolute;left:0;top:0;width:1700px;height:900px;overflow:visible}
+  .slice{cursor:pointer;transition:transform .9s cubic-bezier(.2,1.4,.35,1)}
+  .slice .hv{transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+  .slice.apart:hover .hv{transform:translate(var(--hx),var(--hy)) rotate(var(--hr))}
+  .slice .art-in{pointer-events:none}
+  #centerp{cursor:pointer}
+  .hnote{position:absolute;font:400 30px/1 var(--hand);color:var(--cream);pointer-events:none;text-align:center;transform:translate(-50%,-50%) rotate(var(--r,0deg))}
+  .hlabel{position:absolute;white-space:nowrap;opacity:0;transform:translate(-50%,-50%) scale(.6) rotate(var(--r,0deg));pointer-events:none;
+    transition:opacity .5s .5s,transform .7s cubic-bezier(.2,1.6,.4,1) .5s;text-align:center}
+  .hlabel.show{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(var(--r,0deg))}
+  .hlabel .n{font:400 22px var(--hand);color:var(--c);letter-spacing:2px}
+  .hlabel .t{font:400 27px/1 var(--disp);color:var(--cream);text-shadow:3px 3px 0 var(--c);letter-spacing:.5px}
+  #hnote2{opacity:0;transition:opacity .5s .9s}
+  #hnote2.show{opacity:1}
+  #hnote1{transition:opacity .3s}
+  #hnote1.hide{opacity:0}
+  .bob{animation:bob 2.4s ease-in-out infinite}
+  @keyframes bob{50%{transform:translate(-50%,-50%) translateY(-9px) rotate(var(--r,0deg))}}
+
+  /* ---------- interfaz ---------- */
+  #nav{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;display:flex;gap:10px}
+  #nav button{font:400 21px var(--hand);letter-spacing:1px;color:var(--cream);background:#000;border:2.5px solid var(--cream);
+    padding:5px 16px 4px;cursor:pointer;border-radius:46% 54% 50% 50% / 60% 55% 45% 40%;transition:transform .2s,background .2s,color .2s}
+  #nav button:hover{transform:rotate(-3deg) scale(1.06)}
+  #nav button.on{background:var(--c);color:#111;border-color:var(--c);box-shadow:3px 3px 0 var(--cream)}
+  .arrow{position:fixed;top:50%;z-index:60;width:62px;height:62px;margin-top:-31px;cursor:pointer;border:0;background:none;
+    transition:transform .2s;opacity:.9}
+  .arrow:hover{transform:scale(1.15) rotate(-6deg)}
+  .arrow.l{left:12px}.arrow.r{right:12px}
+  .arrow.off{opacity:0;pointer-events:none}
+  .arrow svg{width:100%;height:100%;overflow:visible}
+  #tools{position:fixed;right:22px;top:18px;z-index:60;display:flex;gap:8px;transition:opacity .4s}
+  #tools.off{opacity:0;pointer-events:none}
+  #tools button{font:400 20px var(--hand);letter-spacing:1px;color:#111;background:var(--cream);border:2.5px solid #111;padding:4px 14px;cursor:pointer;
+    box-shadow:4px 4px 0 var(--c,var(--tom));transition:transform .15s,box-shadow .15s}
+  #tools button:hover{transform:translate(-2px,-2px) rotate(-2deg);box-shadow:6px 6px 0 var(--c,var(--tom))}
+  #home{position:fixed;left:22px;top:16px;z-index:60;font:400 24px var(--disp);color:var(--cream);cursor:pointer;background:none;border:0;
+    text-shadow:3px 3px 0 var(--tom);transition:opacity .4s,transform .2s;transform:rotate(-3deg)}
+  #home:hover{transform:rotate(2deg) scale(1.05)}
+  #home.off{opacity:0;pointer-events:none}
 </style>
 </head>
 <body>
-<div id="stage"><svg id="graph"><g id="vp"><g id="links"></g><g id="nodes"></g></g></svg></div>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="rough" x="-8%" y="-8%" width="116%" height="116%"><feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="5.5"/></filter>
+    <filter id="rough2" x="-8%" y="-8%" width="116%" height="116%"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="9" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.2"/></filter>
+  </defs>
+</svg>
 
-<div id="title">
-  <h1>Problemáticas<br>de <span>Kennedy</span></h1>
-  <p>Mapa causal de la fragmentación territorial. Toca, arrastra y explora cada conexión.</p>
+<div id="viewport">
+  <div id="cam">
+    <div class="layer" id="L-ridge"></div>
+    <div class="layer" id="L-sky"></div>
+    <div class="layer" id="L-mid"></div>
+    <div class="layer" id="L-near"></div>
+  </div>
 </div>
-<div id="search"><input id="q" placeholder="Buscar una problemática…" autocomplete="off"><div id="res"></div></div>
-<div id="hint">Toca la esfera blanca</div>
-<div id="legend">
-  <span style="color:var(--p1)"><i></i><em>Hiperconcentración del mercado mayorista</em></span>
-  <span style="color:var(--p2)"><i></i><em>Saturación de los residuos</em></span>
-  <span style="color:var(--p3)"><i></i><em>Degradación del soporte ecológico</em></span>
-</div>
-<div id="tools">
-  <button id="bExpand">Expandir todo</button>
-  <button id="bReset">Reiniciar</button>
-  <button id="bFit">Ajustar</button>
-  <button id="bIn">+</button>
-  <button id="bOut">−</button>
-</div>
-<div id="card"><div class="tag"></div><h2></h2><div class="path"></div><div class="more"></div></div>
+<div id="vig"></div><div id="grain"></div>
 
-<script src="lib/d3.min.js"></script>
+<button id="home">KENNEDY</button>
+<div id="tools" class="off"><button id="bAll">Abrir todo</button><button id="bNone">Cerrar todo</button></div>
+<button class="arrow l off" id="aL" aria-label="Anterior"><svg viewBox="0 0 60 60"><path filter="url(#rough2)" d="M46 30H14M28 14L12 30L28 46" fill="none" stroke="#efe4cf" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+<button class="arrow r" id="aR" aria-label="Siguiente"><svg viewBox="0 0 60 60"><path filter="url(#rough2)" d="M14 30H46M32 14L48 30L32 46" fill="none" stroke="#efe4cf" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+<div id="nav"></div>
+
 <script src="lib/lucide.min.js"></script>
 <script>
-/* ---------- Datos (tablero de Miro) · i = icono Lucide · s = etiqueta corta ---------- */
-const DATA = {
-  t:"La Fragmentación Territorial", i:"Puzzle", c:[
-  { t:"Hiperconcentración del mercado mayorista", i:"Store", color:"--p1", c:[
+/* ============ paleta y datos (tablero de Miro) ============ */
+const CREAM="#efe4cf", TOM="#ff5a36", MUS="#ffc531", SKY="#4cb5e8", TEAL="#2a9d8f", PINK="#ff8fb3", INK="#151515";
+const SW=1700, SH=900;
+const DATA = { t:"La Fragmentación Territorial", c:[
+  { t:"Hiperconcentración del mercado mayorista", short:"Mercado mayorista", i:"Store", color:TOM, art:"market", c:[
       { t:"Dependencia alimentaria", i:"ShoppingBasket", c:[
         { t:"Pérdida de producción local", i:"Sprout", c:[
-          { t:"Modelo económico: más rentable convertir tierra rural en suelo urbano", s:"Tierra rural convertida en suelo urbano", i:"Banknote", c:[
+          { t:"Modelo económico: más rentable convertir tierra rural en suelo urbano", s:"Más rentable volver urbana la tierra rural", i:"Banknote", c:[
             { t:"Crecimiento demográfico acelerado", i:"Users", c:[
-              { t:"Expulsión violenta de millones de campesinos de sus tierras rurales", s:"Expulsión violenta de campesinos", i:"Tractor" }
-            ]}
-          ]}
-        ]}
-      ]},
-      { t:"Modelo de higiene estatal y salubridad pública", i:"SprayCan", c:[
+              { t:"Expulsión violenta de millones de campesinos de sus tierras rurales", s:"Expulsión violenta de campesinos", i:"Tractor" } ]} ]} ]} ]},
+      { t:"Modelo de higiene estatal y salubridad pública", s:"Modelo de higiene estatal y salubridad pública", i:"SprayCan", c:[
         { t:"Crisis epidémicas y brotes de enfermedades infecciosas", s:"Crisis epidémicas y brotes infecciosos", i:"Biohazard", c:[
-          { t:"Descomposición acelerada de alimentos al aire libre", i:"Apple", c:[
+          { t:"Descomposición acelerada de alimentos al aire libre", s:"Alimentos que se descomponen al aire libre", i:"Apple", c:[
             { t:"Carencia de infraestructura tecnológica", i:"Cpu", c:[
               { t:"Industrialización tardía del país", i:"Factory", c:[
-                { t:"La monoexportación cafetera", i:"Coffee" }
-              ]}
-            ]}
-          ]}
-        ]}
-      ]},
+                { t:"La monoexportación cafetera", i:"Coffee" } ]} ]} ]} ]} ]},
       { t:"Sobrecarga de la red de transporte", i:"Bus", c:[
         { t:"Concentración espacial de origen y destino", i:"MapPin", c:[
           { t:"Densificación residencial en altura", i:"Building2", c:[
-            { t:"Especulación del suelo", i:"TrendingUp", c:[
-              { t:"Escasez de suelo", i:"Layers" }
-            ]}
-          ]},
+            { t:"Especulación del suelo", i:"TrendingUp", c:[ { t:"Escasez de suelo", i:"Layers" } ]} ]},
           { t:"Clusters laborales", i:"Briefcase", c:[
             { t:"Proceso histórico de expansión monocéntrica de Bogotá", s:"Expansión monocéntrica de Bogotá", i:"Target", c:[
-              { t:"Economías de aglomeración", i:"Network" }
-            ]}
-          ]}
-        ]},
+              { t:"Economías de aglomeración", i:"Network" } ]} ]} ]},
         { t:"Desplazamientos masivos en franjas horarias específicas", s:"Desplazamientos masivos por franjas horarias", i:"Footprints", c:[
-          { t:"Factores culturales e institucionales estandarizados", i:"Landmark" },
-          { t:"Modelo de sincronización industrial y horarios rígidos", i:"Settings" }
-        ]}
-      ]}
+          { t:"Factores culturales e institucionales estandarizados", s:"Factores culturales e institucionales", i:"Landmark" },
+          { t:"Modelo de sincronización industrial y horarios rígidos", s:"Sincronización industrial y horarios rígidos", i:"Settings" } ]} ]}
   ]},
-  { t:"Saturación de los residuos", i:"Trash2", color:"--p2", c:[
+  { t:"Saturación de los residuos", short:"Saturación de residuos", i:"Trash2", color:MUS, art:"bin", c:[
       { t:"Presión sobre los sistemas de saneamiento", i:"Gauge", c:[
         { t:"Generación de aguas residuales", i:"Droplet", c:[
-          { t:"Cargas contaminantes en aguas superficiales", i:"FlaskConical" }
-        ]}
-      ]}
+          { t:"Cargas contaminantes en aguas superficiales", i:"FlaskConical" } ]} ]}
   ]},
-  { t:"Degradación de la capacidad de soporte ecológico", i:"Globe", color:"--p3", c:[
-      { t:"Deterioro de la calidad del aire", i:"Wind", c:[
-        { t:"Emisiones de NO₂ y CO", i:"Car" }
-      ]},
+  { t:"Degradación de la capacidad de soporte ecológico", short:"Soporte ecológico", i:"Globe", color:SKY, art:"wet", c:[
+      { t:"Deterioro de la calidad del aire", i:"Wind", c:[ { t:"Emisiones de NO₂ y CO", i:"Car" } ]},
       { t:"Deterioro de la calidad del agua", i:"Droplets" },
-      { t:"Pérdida de la biodiversidad", i:"Bird", c:[
-        { t:"Falta de disponibilidad de hábitats naturales", i:"TreePine" }
-      ]},
+      { t:"Pérdida de la biodiversidad", i:"Bird", c:[ { t:"Falta de disponibilidad de hábitats naturales", s:"Faltan hábitats naturales", i:"TreePine" } ]},
       { t:"Vulnerabilidad frente a eventos de lluvia", i:"CloudRain" },
       { t:"Planificación urbana orientada al mercado y no a la descentralización", s:"Planificación urbana orientada al mercado", i:"PencilRuler", c:[
         { t:"Transformación en superficies construidas", i:"Construction", c:[
           { t:"Alteración de las condiciones del suelo", i:"Mountain" },
           { t:"Impermeabilización del suelo", i:"BrickWall" },
           { t:"Fragmentación de la cobertura vegetal", i:"Scissors" },
-          { t:"Pérdida de la cobertura vegetal", i:"Leaf" }
-        ]}
-      ]}
+          { t:"Pérdida de la cobertura vegetal", i:"Leaf" } ]} ]}
   ]}
 ]};
-DATA.c = [DATA.c[0], DATA.c[2], DATA.c[1]];   // mercado abajo · ecológico izq/arriba · residuos derecha
 
-/* ---------- Preparación del árbol ---------- */
-const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
-let all = [], idn = 0;
-function prep(n, parent, depth, color, branch){
-  n.id = idn++; n.parent = parent; n.depth = depth; n.open = false; n.vis = false;
-  n.color = n.color ? css(n.color) : (color || "#ffffff");
-  n.branch = depth===1 ? n.t : branch;
-  n.kids = n.c || [];
-  n.r = depth===0 ? 58 : depth===1 ? 42 : 27;
-  all.push(n);
-  n.kids.forEach(k => prep(k, n, depth+1, n.color, n.branch));
-  n.w = Math.max(1, n.kids.reduce((s,k)=>s+k.w,0));
-  if (depth === 1) n.w = Math.max(n.w, 3.5);
-}
-prep(DATA, null, 0, null, null);
-
-// posiciones "hogar": la física las respeta suavemente para que el mapa conserve su orden
-const FIRST = 250, RING = 175;
-function place(n, a0, a1){
-  const a = (a0+a1)/2, r = n.depth===0 ? 0 : FIRST + (n.depth-1)*RING;
-  n.hx = Math.cos(a)*r*1.7; n.hy = Math.sin(a)*r*.82;   // elipse: aprovecha pantallas anchas
-  let cur = a0; const span = a1-a0, tot = n.kids.reduce((s,k)=>s+k.w,0);
-  n.kids.forEach(k => { const s = span*k.w/tot; place(k, cur, cur+s); cur += s; });
-}
-const w1 = DATA.kids.reduce((s,k)=>s+k.w,0), bottom = 2*Math.PI*DATA.kids[0].w/w1, a0 = Math.PI/2 - bottom/2;
-place(DATA, a0, a0 + 2*Math.PI);
-
-/* ---------- Escena ---------- */
-const svg = d3.select("#graph"), vp = d3.select("#vp"), gL = d3.select("#links"), gN = d3.select("#nodes");
-const card = document.getElementById("card"), hint = document.getElementById("hint"), stageEl = document.getElementById("stage");
-let W = innerWidth, H = innerHeight, T = d3.zoomIdentity, pinned = null, hovered = null;
-
-const sim = d3.forceSimulation([])
-  .force("link",   d3.forceLink([]).distance(d => d.target.depth===1 ? 190 : 120).strength(.55))
-  .force("charge", d3.forceManyBody().strength(d => d.depth===0 ? -300 : d.depth===1 ? -220 : -120).distanceMax(380))
-  .force("collide",d3.forceCollide(d => d.r + 38).strength(.9))
-  .force("x", d3.forceX(d => d.hx).strength(.11))
-  .force("y", d3.forceY(d => d.hy).strength(.11))
-  .velocityDecay(.38).alphaDecay(.03).alphaTarget(.012)
-  .on("tick", tick);
-
-let linkSel = gL.selectAll("line"), nodeSel = gN.selectAll("g");
-function tick(){
-  linkSel.attr("x1",d=>d.source.x).attr("y1",d=>d.source.y).attr("x2",d=>d.target.x).attr("y2",d=>d.target.y);
-  nodeSel.attr("transform",d=>`translate(${d.x},${d.y})`);
+/* ============ utilidades ============ */
+const rng = seed => () => { seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
+const $ = (s,r=document) => r.querySelector(s);
+const el = (tag, cls, html) => { const e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e; };
+function icon(name, sw=2.4){
+  const d = lucide.icons[name]; if(!d) return "";
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${d[2].map(([t,a])=>`<${t} ${Object.entries(a).map(([k,v])=>`${k}="${v}"`).join(" ")}/>`).join("")}</svg>`;
 }
 
-function wrap(s, max){
-  const out=[]; let line="";
-  s.split(" ").forEach(w=>{ if((line+" "+w).trim().length>max && line){ out.push(line); line=w; } else line=(line+" "+w).trim(); });
-  out.push(line); return out;
+/* ============ ilustraciones (caja 240×240) ============ */
+const ART = {
+  market(){
+    let s = `<g filter="url(#rough)">
+      <rect x="26" y="96" width="10" height="144" fill="${CREAM}"/><rect x="204" y="96" width="10" height="144" fill="${CREAM}"/>
+      <path d="M8 60H232L244 110H-4Z" fill="${CREAM}"/>`;
+    for(let i=0;i<6;i+=2){ const t0=8+i*36.7, t1=8+(i+1)*36.7, b0=-4+i*41.3, b1=-4+(i+1)*41.3; s+=`<path d="M${t0} 60H${t1}L${b1} 110H${b0}Z" fill="${TOM}"/>`; }
+    for(let i=0;i<6;i++){ s+=`<path d="M${-4+i*41.3} 110a20.6 20.6 0 0 0 41.3 0Z" fill="${i%2?CREAM:TOM}"/>`; }
+    s+=`<rect x="16" y="180" width="208" height="60" fill="${TEAL}"/><path d="M16 200H224M16 220H224" stroke="${INK}" stroke-width="3"/>`;
+    [[52,TOM],[88,MUS],[124,TOM],[160,PINK],[196,MUS]].forEach(([x,c],i)=>{ s+=`<circle cx="${x}" cy="${166+(i%2)*3}" r="16" fill="${c}"/><circle cx="${x-5}" cy="${160+(i%2)*3}" r="4" fill="${CREAM}" opacity=".8"/>`; });
+    s+=`<rect x="78" y="124" width="84" height="26" fill="${INK}"/><text x="120" y="143" font-family="Bowlby One,Arial Black" font-size="14" text-anchor="middle" fill="${CREAM}">ABASTO</text></g>`;
+    return s;
+  },
+  bin(){
+    return `<g filter="url(#rough)">
+      <circle cx="84" cy="92" r="46" fill="#3c3c3c"/><path d="M70 50q14-18 30 0z" fill="#3c3c3c"/><path d="M62 78q8-14 24-14" stroke="${CREAM}" stroke-width="4" fill="none" opacity=".6"/>
+      <circle cx="152" cy="84" r="48" fill="${MUS}"/><path d="M138 38q14-16 30 0z" fill="${MUS}"/><path d="M128 66q10-14 28-12" stroke="${INK}" stroke-width="4" fill="none" opacity=".5"/>
+      <circle cx="118" cy="62" r="36" fill="${TOM}"/><path d="M104 28q14-14 28 0z" fill="${TOM}"/>
+      <path d="M50 116H190L176 232H64Z" fill="${TEAL}"/><rect x="40" y="102" width="160" height="20" rx="4" fill="#1f7066"/>
+      <path d="M86 130V224M120 130V224M154 130V224" stroke="${INK}" stroke-width="4" opacity=".55"/>
+      <rect x="190" y="206" width="40" height="14" rx="3" fill="${SKY}" transform="rotate(-18 210 213)"/>
+      <path d="M12 220l22-6 4 14z" fill="${CREAM}"/>
+      <circle cx="196" cy="40" r="4" fill="${CREAM}"/><circle cx="214" cy="62" r="3.5" fill="${CREAM}"/><circle cx="34" cy="60" r="4" fill="${CREAM}"/>
+    </g>`;
+  },
+  wet(){
+    return `<g filter="url(#rough)">
+      <ellipse cx="120" cy="212" rx="112" ry="26" fill="${SKY}"/><path d="M30 208q20-8 40 0t40 0t40 0t40 0" stroke="${CREAM}" stroke-width="3.5" fill="none" opacity=".7"/>
+      <path d="M26 206l-4-62M40 208l2-46M200 208l6-56M214 206l-1-40" stroke="${TEAL}" stroke-width="6" stroke-linecap="round"/>
+      <ellipse cx="22" cy="140" rx="7" ry="14" fill="#8a5a3b"/><ellipse cx="42" cy="156" rx="6" ry="12" fill="#8a5a3b"/><ellipse cx="206" cy="146" rx="7" ry="14" fill="#8a5a3b"/>
+      <rect x="108" y="112" width="24" height="104" fill="#8a5a3b"/><path d="M120 150l-26-26M120 160l28-24" stroke="#8a5a3b" stroke-width="8" stroke-linecap="round"/>
+      <circle cx="120" cy="82" r="54" fill="${TEAL}"/><circle cx="76" cy="112" r="38" fill="#238175"/><circle cx="164" cy="112" r="40" fill="#238175"/>
+      <circle cx="104" cy="66" r="8" fill="${MUS}" opacity=".9"/><circle cx="140" cy="90" r="7" fill="${MUS}" opacity=".9"/>
+      <path d="M176 36q12-14 24 0q12-14 24 0q-12 4-24 20q-12-16-24-20z" fill="${CREAM}"/>
+      <path d="M22 40a16 16 0 0 1 30-6a14 14 0 0 1 24 10H20z" fill="${CREAM}"/><path d="M32 54l-4 12M46 54l-4 12M60 54l-4 12" stroke="${SKY}" stroke-width="4" stroke-linecap="round"/>
+    </g>`;
+  }
+};
+const artSVG = (kind, cls="art") => `<svg class="${cls}" viewBox="0 0 240 240">${ART[kind]()}</svg>`;
+
+/* ============ escenografía con paralaje ============ */
+const stars = () => { const r=rng(5); let s=""; for(let i=0;i<150;i++) s+=`<circle cx="${r()*4400}" cy="${20+r()*430}" r="${.7+r()*1.7}" fill="${CREAM}" opacity="${.25+r()*.5}"/>`; return s; };
+function ridge(){
+  const r=rng(7); let d="M0 900L0 650", x=0; while(x<3700){ x+=40+r()*80; d+=` L${x} ${560+r()*170}`; }
+  return `<svg width="3700" height="900"><path d="${d}L3700 900Z" fill="#0a1c1a" stroke="#14403a" stroke-width="3"/></svg>`;
 }
-function drawIcon(g, n){
-  const def = lucide.icons[n.i]; if(!def) return;
-  const s = (n.r*0.95)/24;
-  const grp = d3.select(g).attr("transform",`translate(${-12*s},${-12*s}) scale(${s})`);
-  def[2].forEach(([tag, attrs]) => { const e = grp.append(tag); Object.entries(attrs).forEach(([k,v])=>e.attr(k,v)); });
+function skyline(){
+  const r=rng(11); let x=0, out="";
+  while(x<6100){
+    const w=44+r()*76, h=70+r()*250, y=830-h; const wins=[];
+    for(let wx=x+8; wx<x+w-10; wx+=15) for(let wy=y+12; wy<830-14; wy+=21) if(r()<.28) wins.push(`M${wx.toFixed(0)} ${wy.toFixed(0)}h5v7h-5z`);
+    out+=`<rect x="${x}" y="${y}" width="${w}" height="${h+80}" fill="#101010" stroke="#262626" stroke-width="2"/><path d="${wins.join("")}" fill="${MUS}" opacity=".55"/>`;
+    if(r()<.25) out+=`<path d="M${x+w/2} ${y}V${y-30}" stroke="#262626" stroke-width="3"/>`;
+    x+=w+(r()<.35?r()*30:-2);
+  }
+  return `<svg width="6200" height="900">${out}</svg>`;
 }
-function build(enter){
-  const g = enter.append("g")
-    .attr("class", d=>`node d${Math.min(d.depth,2)}${d.kids.length?" has":""}${d.open?" open":""}`)
-    .style("--c", d=>d.color)
-    .attr("transform", d=>`translate(${d.x},${d.y})`)
-    .on("click", onClick).on("mouseenter", onEnter).on("mouseleave", onLeave)
-    .call(d3.drag().clickDistance(5)
-      .on("start",(e,d)=>{ if(!e.active) sim.alphaTarget(.3).restart(); d.fx=d.x; d.fy=d.y; stageEl.classList.add("drag"); })
-      .on("drag", (e,d)=>{ d.fx=e.x; d.fy=e.y; })
-      .on("end",  (e,d)=>{ if(!e.active) sim.alphaTarget(.012); if(d.depth>0){ d.fx=null; d.fy=null; } stageEl.classList.remove("drag"); }));
-  const body = g.append("g").attr("class","body"), hov = body.append("g").attr("class","hov");
-  hov.filter(d=>d.kids.length).append("circle").attr("class","ping").attr("r",d=>d.r);
-  hov.append("circle").attr("class","disc").attr("r",d=>d.r);
-  hov.append("g").attr("class","ico").each(function(d){ drawIcon(this,d); });
-  const bd = hov.filter(d=>d.kids.length).append("g").attr("class","badge").attr("transform",d=>`translate(${d.r*.72},${d.r*.72})`);
-  bd.append("circle").attr("r",11); bd.append("text").text(d=>d.kids.length);
-  g.append("text").attr("class","lbl").each(function(d){
-    const lines = wrap(d.s || d.t, d.depth===0 ? 16 : d.depth===1 ? 17 : 19), t = d3.select(this);
-    lines.forEach((ln,i)=> t.append("tspan").attr("x",0).attr("y", d.r + 20 + i*(d.depth<2?17:15)).text(ln));
+function sunSVG(){ return `<svg width="4400" height="900">${stars()}</svg>`; }
+function sunsNear(){ // luna de la portada y un sol retro por capítulo (sin paralaje, para que no se mezclen)
+  const sun=(cx,cy,r,col,fillA)=>{ let t=`<g filter="url(#rough)"><circle cx="${cx}" cy="${cy}" r="${r}" fill="${col}" opacity="${fillA}"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="5"/>`;
+    for(let k=0;k<5;k++) t+=`<rect x="${cx-r-4}" y="${cy+r*.1+k*r*.17}" width="${r*2+8}" height="${4+k*2.5}" fill="#000"/>`; return t+"</g>"; };
+  return sun(1060,120,62,CREAM,.9)+sun(SW+1400,240,150,TOM,.26)+sun(SW*2+1400,240,150,MUS,.24)+sun(SW*3+1400,240,150,SKY,.26);
+}
+function nearDecor(){
+  const groundTop = 828, r=rng(3);
+  let d=`M0 1500V${groundTop}`; for(let x=0;x<=6800;x+=26) d+=` L${x} ${groundTop+(r()-.5)*9}`; d+=`L6800 1500Z`;
+  let g=sunsNear()+`<path filter="url(#rough2)" d="${d}" fill="#17110a" stroke="${CREAM}" stroke-width="3"/>`;
+  for(let x=18;x<6800;x+=24+r()*40) g+=`<path d="M${x} ${groundTop}l-4-${12+r()*12}M${x} ${groundTop}l2-${14+r()*14}M${x} ${groundTop}l7-${10+r()*10}" stroke="${CREAM}" stroke-width="2.5" opacity=".35" fill="none" stroke-linecap="round"/>`;
+  // capítulo 1: camión, costales, cajas
+  const c1=SW*1;
+  g+=`<g filter="url(#rough)" transform="translate(${c1+1020} 748)">
+     <rect x="0" y="0" width="160" height="74" fill="${CREAM}"/><path d="M0 22H160M0 44H160" stroke="${TOM}" stroke-width="5"/>
+     <path d="M160 14h46l26 32v28H160z" fill="${TOM}"/><path d="M174 24h28l14 20h-42z" fill="#111"/>
+     <circle cx="36" cy="76" r="18" fill="#111" stroke="${CREAM}" stroke-width="5"/><circle cx="186" cy="76" r="18" fill="#111" stroke="${CREAM}" stroke-width="5"/></g>`;
+  g+=`<g filter="url(#rough)" transform="translate(${c1+1330} 770)"><path d="M0 60q-6-44 24-52q30 8 24 52z" fill="${MUS}"/><path d="M14 18q10-12 20 0" stroke="${INK}" stroke-width="4" fill="none"/><text x="24" y="48" font-family="Bowlby One" font-size="11" text-anchor="middle" fill="${INK}">CAFÉ</text></g>`;
+  g+=`<g filter="url(#rough)" transform="translate(${c1+1420} 782)"><rect width="46" height="38" fill="${TEAL}"/><path d="M0 13H46M0 26H46" stroke="${INK}" stroke-width="3"/><circle cx="14" cy="-6" r="10" fill="${TOM}"/><circle cx="32" cy="-4" r="9" fill="${MUS}"/></g>`;
+  // capítulo 2: río y bolsas
+  const c2=SW*2;
+  let rv=`M${c2} 868`; for(let x=0;x<=SW;x+=40) rv+=` Q${c2+x+10} ${858+(x/40%2?10:-4)} ${c2+x+20} 868 T${c2+x+40} 868`; rv+=`L${c2+SW} 1500L${c2} 1500Z`;
+  g+=`<path filter="url(#rough)" d="${rv}" fill="${SKY}" opacity=".85"/><path d="M${c2} 886q60-14 120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0t120 0" stroke="${CREAM}" stroke-width="3" fill="none" opacity=".5"/>`;
+  g+=`<g filter="url(#rough)"><circle cx="${c2+640}" cy="800" r="30" fill="#3c3c3c"/><circle cx="${c2+690}" cy="808" r="24" fill="${MUS}"/><circle cx="${c2+1180}" cy="806" r="28" fill="#3c3c3c"/><rect x="${c2+900}" y="780" width="14" height="40" rx="4" fill="${TEAL}" transform="rotate(25 ${c2+907} 800)"/><rect x="${c2+300}" y="790" width="14" height="38" rx="4" fill="${CREAM}" transform="rotate(-20 ${c2+307} 808)"/></g>`;
+  // capítulo 3: árboles y juncos
+  const c3=SW*3;
+  for(let k=0;k<7;k++){ const x=c3+300+k*170+(k%2)*30; g+=`<g filter="url(#rough)"><rect x="${x}" y="${770+(k%3)*6}" width="12" height="62" fill="#8a5a3b"/><circle cx="${x+6}" cy="${760+(k%3)*6}" r="${34+(k%3)*6}" fill="${k%2?TEAL:'#238175'}"/></g>`; }
+  for(let k=0;k<14;k++){ const x=c3+260+k*90; g+=`<path d="M${x} 832q${k%2?-6:6}-30 0-56" stroke="${TEAL}" stroke-width="6" stroke-linecap="round" fill="none"/>`; }
+  return `<svg width="6800" height="1500">${g}</svg>`;
+}
+
+/* ============ mundo ============ */
+$("#L-ridge").innerHTML = ridge();
+$("#L-sky").innerHTML   = sunSVG();
+$("#L-mid").innerHTML   = skyline();
+$("#L-near").innerHTML  = nearDecor();
+const FACT = { "L-ridge":.22, "L-sky":.5, "L-mid":.78, "L-near":1 };
+
+/* ============ capítulos: árbol de papeles ============ */
+const chapters = [];
+function clipFor(r){
+  const j = ()=> (r()*4).toFixed(1)+"px", pts=[];
+  for(let i=0;i<=5;i++) pts.push(`${i*20}% ${j()}`);
+  pts.push(`calc(100% - ${j()}) 30%`,`calc(100% - ${j()}) 70%`);
+  for(let i=5;i>=0;i--) pts.push(`${i*20}% calc(100% - ${j()})`);
+  pts.push(`${j()} 70%`,`${j()} 30%`);
+  return `polygon(${pts.join(",")})`;
+}
+function buildChapter(P, idx){
+  const r = rng(idx*97+13), col = P.color;
+  const sec = el("section","chap"); sec.style.left = idx*SW+"px"; sec.style.setProperty("--c",col);
+  sec.appendChild(el("div","ctitle",`<div class="no">capítulo ${String(idx).padStart(2,"0")}</div><h2>${P.t}</h2>`));
+  const svgNS="http://www.w3.org/2000/svg", lines=document.createElementNS(svgNS,"svg"); lines.setAttribute("class","lines"); lines.setAttribute("viewBox",`0 0 ${SW} ${SH}`);
+  const gl=document.createElementNS(svgNS,"g"); gl.setAttribute("filter","url(#rough2)"); lines.appendChild(gl); sec.appendChild(lines);
+
+  // layout
+  let leaf=0; const nodes=[];
+  (function lay(n,ld){ n.ld=ld; n.open=false; nodes.push(n); n.kids=n.c||[]; n.kids.forEach(k=>{k.parent=n; lay(k,ld+1);});
+    if(!n.kids.length) n.row=leaf++; else n.row=n.kids.reduce((s,k)=>s+k.row,0)/n.kids.length; })(P,0);
+  P.ch=idx;
+  const pitch = leaf>1 ? Math.min(128, 600/(leaf-1)) : 0, y0 = 470 - pitch*(leaf-1)/2;
+  nodes.forEach(n=>{ n.y = y0 + n.row*pitch + (leaf<=1 && n.ld>0 ? (n.ld%2 ? -60 : 60) : 0); n.x = n.ld===0 ? 52 : 340 + (n.ld-1)*215; n.color=col; });
+
+  nodes.forEach(n=>{
+    let e;
+    if(n.ld===0){
+      e = el("div","big",`<svg class="ring" viewBox="0 0 294 294" filter="url(#rough2)"><circle cx="147" cy="147" r="140"/></svg>${artSVG(P.art)}<div class="cnt">${n.kids.length}</div>`);
+      e.style.top = n.y+"px"; e.style.left="52px"; e.style.setProperty("--c",col);
+      e.setAttribute("role","button"); e.setAttribute("aria-label",P.t);
+    } else {
+      const label = n.s || n.t;
+      e = el("div",`tag d${Math.min(n.ld,2)}${n.kids.length?" has":""}`,
+        `<div class="paper">${label}</div><div class="stk">${icon(n.i)}</div>${n.kids.length?`<div class="cnt">${n.kids.length}</div>`:""}`);
+      e.style.left=n.x+"px"; e.style.top=n.y+"px";
+      e.style.setProperty("--c",col); e.style.setProperty("--r",((r()-.5)*5).toFixed(2)+"deg"); e.style.setProperty("--tr",((r()-.5)*14).toFixed(1)+"deg");
+      e.style.setProperty("--clip",clipFor(r)); e.title = n.t; e.tabIndex=0; e.setAttribute("role","button");
+      if(n.kids.length){}
+    }
+    n.el=e; sec.appendChild(e);
+    if(n.parent){
+      const p=n.parent, ax = p.ld===0 ? 302 : p.x+182, ay=p.y, bx=n.x-4, by=n.y;
+      const path=document.createElementNS(svgNS,"path"); path.setAttribute("class","conn"); path.setAttribute("pathLength","1");
+      path.setAttribute("d",`M${ax} ${ay}C${ax+80} ${ay} ${bx-80} ${by} ${bx} ${by}`); path.style.setProperty("--c",col);
+      gl.appendChild(path); n.conn=path;
+    }
+    const act = ev => { ev.stopPropagation(); toggle(n); };
+    e.addEventListener("click", act);
+    e.addEventListener("keydown", ev=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); act(ev); } });
+    e.addEventListener("mouseenter", ()=>focusLine(n));
+    e.addEventListener("mouseleave", ()=>focusLine(null));
   });
-  return g;
+  const chint = el("div","chint","toca el dibujo<br>para seguir el hilo ↗"); chint.style.top=(P.y+150)+"px"; sec.appendChild(chint);
+  function show(n,i){ n.el.style.setProperty("--dl",(i*.07)+"s"); n.conn.style.setProperty("--dl",(i*.07)+"s"); n.el.classList.add("in"); n.conn.classList.add("on"); }
+  function hide(n){ n.open=false; n.el.classList.remove("in","open"); if(n.conn) n.conn.classList.remove("on"); n.kids.forEach(hide); }
+  function toggle(n){
+    if(!n.kids.length) return;
+    if(n.open){ n.open=false; n.el.classList.remove("open"); n.kids.forEach(hide); }
+    else { n.open=true; n.el.classList.add("open"); n.kids.forEach((k,i)=>show(k,i)); }
+    P.touched = true; chint.classList.add("gone");
+  }
+  function focusLine(n){
+    if(!n){ nodes.forEach(m=>{ m.el.classList && m.el.classList.remove("dim"); if(m.conn) m.conn.classList.remove("dim"); }); return; }
+    const s=new Set(); for(let p=n;p;p=p.parent) s.add(p);
+    (function dn(m){ m.kids.forEach(k=>{ if(k.el.classList.contains("in")){ s.add(k); dn(k); } }); })(n);
+    nodes.forEach(m=>{ if(m.ld===0) return; const on=s.has(m); m.el.classList.toggle("dim",!on); m.conn.classList.toggle("dim",!on); });
+  }
+  const api = {
+    sec, P, open(all){ nodes.forEach(n=>{ if(n.kids.length){ n.open=true; n.el.classList.add("open"); } }); let i=0; nodes.forEach(n=>{ if(n.ld>0) show(n,(n.ld*.9)+i++*.03); }); },
+    close(){ nodes.forEach(n=>{ if(n.ld>0) hide(n); }); P.el_open=false; }
+  };
+  P.api=api; P.nodes=nodes;
+  return api;
 }
-function render(){
-  const vn = all.filter(n=>n.vis);
-  const vl = vn.filter(n=>n.parent).map(n=>({source:n.parent, target:n}));
-  sim.nodes(vn); sim.force("link").links(vl);
-  linkSel = gL.selectAll("line.link").data(vl, d=>d.target.id).join(
-    e=>e.append("line").attr("class","link").style("--c",d=>d.target.color),
-    u=>u, x=>x.remove());
-  nodeSel = gN.selectAll("g.node").data(vn, d=>d.id).join(build, u=>u, x=>x.remove());
-  nodeSel.classed("open", d=>d.open);
-  nodeSel.select(".badge text").text(d=>d.open ? "−" : d.kids.length);
-  highlight(hovered || null);
-  sim.alpha(.85).restart(); tick();
-}
+DATA.c.forEach((P,i)=>chapters.push(buildChapter(P,i+1)));
+chapters.forEach(c=>$("#L-near").appendChild(c.sec));
 
-/* ---------- Mostrar / ocultar ---------- */
-function show(n){ if(n.vis) return; const p=n.parent; n.x=p.x+(Math.random()-.5)*8; n.y=p.y+(Math.random()-.5)*8; n.vx=n.vy=0; n.vis=true; }
-function hide(n){ n.vis=false; n.open=false; if(n.depth>0){ n.fx=n.fy=null; } n.kids.forEach(hide); }
-function expand(n){ n.open=true; n.kids.forEach(show); }
-function collapse(n){ n.open=false; n.kids.forEach(hide); }
-function onClick(e,n){
-  e.stopPropagation(); pinned=n; showCard(n);
-  if(!n.kids.length) { bump(n); return; }
-  n.open ? collapse(n) : expand(n);
-  hint.classList.add("hide"); render(); settleFit();
+/* ============ portada: la bolita que se rompe ============ */
+const hero = el("section","hero"); hero.style.left="0px";
+hero.innerHTML = `<div class="kicker">problemáticas de</div><h1>KENNEDY</h1>
+  <div class="sub">Un viaje por las causas que <b>fragmentan</b> el territorio, una a una.</div><div class="where">Localidad de Kennedy · Bogotá</div>`;
+const CX=1160, CY=470, R=215;
+const hsvg = document.createElementNS("http://www.w3.org/2000/svg","svg"); hsvg.setAttribute("class","fr"); hsvg.setAttribute("viewBox",`0 0 ${SW} ${SH}`);
+const hr = rng(21);
+function pie(a0,a1){
+  const pts=[[0,0]], pol=(a,rad)=>[Math.cos(a)*rad, Math.sin(a)*rad], jit=()=> (hr()-.5)*10;
+  for(let k=1;k<=4;k++){ const p=pol(a0,R*k/5); pts.push([p[0]+jit(),p[1]+jit()]); }
+  const n=Math.round((a1-a0)/(Math.PI/36)); for(let k=0;k<=n;k++){ const a=a0+(a1-a0)*k/n, p=pol(a,R+(hr()-.5)*12); pts.push(p); }
+  for(let k=4;k>=1;k--){ const p=pol(a1,R*k/5); pts.push([p[0]+jit(),p[1]+jit()]); }
+  return "M"+pts.map(p=>p[0].toFixed(1)+" "+p[1].toFixed(1)).join("L")+"Z";
 }
-function bump(n){ nodeSel.filter(d=>d===n).classed("flash",false); void 0; nodeSel.filter(d=>d===n).classed("flash",true); setTimeout(()=>nodeSel.classed("flash",false),2100); }
-function expandAll(){ all.forEach(n=>{ if(n.kids.length){ n.open=true; n.kids.forEach(show); } }); hint.classList.add("hide"); render(); settleFit(true); }
-function reset(){ collapse(DATA); pinned=null; card.classList.remove("show"); hint.classList.remove("hide"); render(); toCenter(); }
-
-/* ---------- Resaltado por linaje ---------- */
-function lineage(n){
-  const s = new Set(); for(let p=n;p;p=p.parent) s.add(p);
-  (function down(m){ m.kids.forEach(k=>{ if(k.vis){ s.add(k); down(k); } }); })(n);
-  return s;
-}
-function highlight(n){
-  if(!n){ nodeSel.classed("dim",false); linkSel.classed("hot",false).classed("dim",false); return; }
-  const s = lineage(n);
-  nodeSel.classed("dim", d=>!s.has(d));
-  linkSel.classed("hot", l=>s.has(l.source)&&s.has(l.target)).classed("dim", l=>!(s.has(l.source)&&s.has(l.target)));
-}
-function onEnter(e,n){ hovered=n; highlight(n); showCard(n); }
-function onLeave(){ hovered=null; highlight(null); if(pinned) showCard(pinned); else card.classList.remove("show"); }
-
-function showCard(n){
-  card.style.setProperty("--c", n.color);
-  card.querySelector(".tag").textContent = n.depth===0 ? "Fenómeno central" : n.branch;
-  card.querySelector("h2").textContent = n.t;
-  const trail=[]; for(let p=n.parent;p;p=p.parent) trail.push(p.t);
-  card.querySelector(".path").innerHTML = trail.length ? "<b>Se origina en:</b> "+trail.join(" ← ") : "Todo el mapa parte de este fenómeno territorial.";
-  card.querySelector(".more").textContent = n.kids.length ? (n.open?"Clic para cerrar · ":"Clic para abrir · ")+n.kids.length+(n.kids.length>1?" causas":" causa") : "Sin más causas registradas";
-  card.classList.add("show");
-}
-svg.on("click", ()=>{ pinned=null; card.classList.remove("show"); });
-
-/* ---------- Cámara ---------- */
-const zoom = d3.zoom().scaleExtent([.15,3]).clickDistance(5)
-  .on("zoom", e=>{ T=e.transform; vp.attr("transform",T); })
-  .on("start", e=>{ if(e.sourceEvent && e.sourceEvent.type==="mousedown") stageEl.classList.add("drag"); })
-  .on("end", ()=>stageEl.classList.remove("drag"));
-svg.call(zoom).on("dblclick.zoom",null);
-function toCenter(){ svg.transition().duration(900).ease(d3.easeCubicOut).call(zoom.transform, d3.zoomIdentity.translate(W/2,H/2-20)); }
-function bounds(){
-  const v = all.filter(n=>n.vis); let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-  v.forEach(n=>{ x0=Math.min(x0,n.x-80); x1=Math.max(x1,n.x+80); y0=Math.min(y0,n.y-n.r-10); y1=Math.max(y1,n.y+n.r+80); });
-  return {x0,y0,x1,y1};
-}
-function fit(force){
-  const b = bounds(), bw=b.x1-b.x0, bh=b.y1-b.y0, padX=60, top=110, bot=90;
-  const k = Math.min((W-padX*2)/bw, (H-top-bot)/bh, 1.15);
-  const tl = T.apply([b.x0,b.y0]), br = T.apply([b.x1,b.y1]);
-  const inside = tl[0]>=padX/2 && br[0]<=W-padX/2 && tl[1]>=top/2 && br[1]<=H-bot/2;
-  if(!force && inside) return;
-  const kk = force ? k : Math.min(k, T.k);
-  const t = d3.zoomIdentity.translate(W/2-(b.x0+bw/2)*kk, top+(H-top-bot)/2-(b.y0+bh/2)*kk).scale(kk);
-  svg.transition().duration(1000).ease(d3.easeCubicInOut).call(zoom.transform, t);
-}
-function settleFit(force){ setTimeout(()=>fit(force),700); setTimeout(()=>fit(force),1700); }
-function focusOn(n){
-  const k = Math.max(T.k, .95);
-  svg.transition().duration(1000).ease(d3.easeCubicInOut).call(zoom.transform, d3.zoomIdentity.translate(W/2-n.x*k, H/2-n.y*k).scale(k));
-}
-document.getElementById("bExpand").onclick = expandAll;
-document.getElementById("bReset").onclick  = reset;
-document.getElementById("bFit").onclick    = ()=>fit(true);
-document.getElementById("bIn").onclick     = ()=>svg.transition().duration(300).call(zoom.scaleBy,1.35);
-document.getElementById("bOut").onclick    = ()=>svg.transition().duration(300).call(zoom.scaleBy,1/1.35);
-addEventListener("resize", ()=>{ W=innerWidth; H=innerHeight; });
-
-/* ---------- Buscador ---------- */
-const q = document.getElementById("q"), res = document.getElementById("res");
-let hits=[], act=-1;
-function reveal(n){
-  const chain=[]; for(let p=n.parent;p;p=p.parent) chain.unshift(p);
-  chain.forEach(p=>{ if(!p.open) expand(p); });
-  hint.classList.add("hide"); render(); pinned=n; showCard(n);
-  setTimeout(()=>{ focusOn(n); bump(n); }, 900);
-}
-function runSearch(){
-  const t = norm(q.value.trim()); hits = t ? all.filter(n=>n.depth>0 && norm(n.t).includes(t)).slice(0,7) : [];
-  res.innerHTML=""; act=-1;
-  hits.forEach((n,i)=>{ const d=document.createElement("div"); d.style.setProperty("--c",n.color); d.textContent=n.t;
-    d.onmousedown=e=>{ e.preventDefault(); pick(n); }; res.appendChild(d); });
-  res.classList.toggle("show", hits.length>0);
-}
-function pick(n){ q.value=""; res.classList.remove("show"); q.blur(); reveal(n); }
-q.addEventListener("input", runSearch);
-q.addEventListener("keydown", e=>{
-  if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); act=(act+(e.key==="ArrowDown"?1:-1)+hits.length)%hits.length; [...res.children].forEach((c,i)=>c.classList.toggle("act",i===act)); }
-  else if(e.key==="Enter" && hits.length){ pick(hits[Math.max(0,act)]); }
-  else if(e.key==="Escape"){ q.value=""; runSearch(); q.blur(); }
+const deg = d => d*Math.PI/180;
+const SL = [ {i:0,a0:30,a1:150,mid:90},   // mercado (abajo)
+             {i:1,a0:270,a1:390,mid:330}, // residuos (arriba derecha)
+             {i:2,a0:150,a1:270,mid:210} ]; // ecológico (arriba izquierda)
+let gS="";
+SL.forEach(s=>{
+  const P=DATA.c[s.i], m=deg(s.mid), ax=Math.cos(m), ay=Math.sin(m);
+  const cxm=ax*R*.6, cym=ay*R*.6, sc=.62;
+  gS+=`<g class="slice" data-i="${s.i}" style="transform:translate(${CX}px,${CY}px);--hx:${(ax*18).toFixed(1)}px;--hy:${(ay*18).toFixed(1)}px;--hr:${(s.i-1)*3}deg;--ox:${(ax*78).toFixed(1)}px;--oy:${(ay*78).toFixed(1)}px">
+    <g class="hv"><g filter="url(#rough)"><path d="${pie(deg(s.a0),deg(s.a1))}" fill="${P.color}" stroke="${CREAM}" stroke-width="4"/></g>
+    <g class="art-in" transform="translate(${(cxm-120*sc).toFixed(1)} ${(cym-120*sc).toFixed(1)}) scale(${sc})">${ART[P.art]()}</g></g></g>`;
 });
-q.addEventListener("blur", ()=>setTimeout(()=>res.classList.remove("show"),150));
+gS+=`<g id="centerp" style="transform:translate(${CX}px,${CY}px)"><g filter="url(#rough)"><circle r="82" fill="${CREAM}" stroke="${INK}" stroke-width="5"/></g>
+  <g transform="translate(-26 -62)" style="color:${INK}">${icon("Puzzle",2.2).replace("<svg",'<svg width="52" height="52"')}</g>
+  <text y="14" text-anchor="middle" font-family="Bowlby One,Arial Black" font-size="12" fill="${INK}">LA</text>
+  <text y="31" text-anchor="middle" font-family="Bowlby One,Arial Black" font-size="12.5" fill="${INK}">FRAGMENTACIÓN</text>
+  <text y="48" text-anchor="middle" font-family="Bowlby One,Arial Black" font-size="12.5" fill="${TOM}">TERRITORIAL</text></g>`;
+hsvg.innerHTML=gS; hero.appendChild(hsvg);
+hero.insertAdjacentHTML("beforeend",
+  `<div class="hnote bob" id="hnote1" style="left:${CX}px;top:${CY+R+88}px;--r:-3deg">¡tócala para romperla!<br><span style="font-size:42px">↑</span></div>
+   <div class="hnote" id="hnote2" style="left:${CX}px;top:${CY+R+100}px;--r:-2deg;color:${MUS}">ahora elige un pedazo y entra →</div>`);
+const lab=(i,x,y,rot)=>{ const P=DATA.c[i]; return `<div class="hlabel" data-i="${i}" style="left:${x}px;top:${y}px;--c:${P.color};--r:${rot}deg"><div class="n">capítulo 0${i+1}</div><div class="t">${P.short}</div></div>`; };
+hero.insertAdjacentHTML("beforeend", lab(2,CX-440,CY-110,-4)+lab(1,CX+300,CY-300,3)+lab(0,CX-400,CY+R-20,-2));
+$("#L-near").appendChild(hero);
+let split=false;
+function doSplit(){
+  if(split) return; split=true;
+  hero.querySelectorAll(".slice").forEach(s=>{ s.classList.add("apart"); s.style.transform=`translate(calc(${CX}px + ${s.style.getPropertyValue("--ox")}),calc(${CY}px + ${s.style.getPropertyValue("--oy")}))`; });
+  hero.querySelectorAll(".hlabel").forEach(l=>l.classList.add("show"));
+  $("#hnote1").classList.add("hide"); $("#hnote2").classList.add("show");
+}
+hero.querySelectorAll(".slice").forEach(s=>s.addEventListener("click",ev=>{ ev.stopPropagation(); if(!split) doSplit(); else go(+s.dataset.i+1); }));
+$("#centerp").addEventListener("click",ev=>{ ev.stopPropagation(); doSplit(); });
 
-/* ---------- Inicio: solo la esfera central ---------- */
-DATA.x=0; DATA.y=0; DATA.fx=0; DATA.fy=0; DATA.vis=true;
-svg.call(zoom.transform, d3.zoomIdentity.translate(W/2,H/2-20));
-render();
-if (location.hash === "#todo") expandAll();
+/* ============ cámara y navegación ============ */
+let idx=0, W=innerWidth, H=innerHeight, scale=1;
+const cam=$("#cam"), layers=[...document.querySelectorAll(".layer")];
+function fitScale(){ W=innerWidth; H=innerHeight; scale=Math.min(W/SW, H/SH); }
+function aim(){
+  const cx = -idx*SW, offX=(W-SW*scale)/2, offY=(H-SH*scale)/2;
+  cam.style.transform = `translate(${offX}px,${offY}px) scale(${scale}) translateX(${cx}px)`;
+}
+/* extra de cada capa = (f-1)*cx con cx<0  =>  positivo para f<1 */
+function aimLayers(){ const cx=-idx*SW; layers.forEach(l=>{ const f=FACT[l.id]; l.style.transform=`translateX(${(f-1)*cx}px)`; }); }
+function apply(){ aim(); aimLayers(); updateUI(); }
+function go(i){ idx=Math.max(0,Math.min(chapters.length,i)); apply(); }
+function updateUI(){
+  $("#aL").classList.toggle("off", idx===0); $("#aR").classList.toggle("off", idx===chapters.length);
+  $("#home").classList.toggle("off", idx===0); $("#tools").classList.toggle("off", idx===0);
+  [...$("#nav").children].forEach((b,k)=>b.classList.toggle("on",k===idx));
+  const c = idx>0 ? DATA.c[idx-1].color : TOM; $("#tools").style.setProperty("--c", c);
+  const nb=$("#nav").children[idx]; if(nb) nb.style.setProperty("--c", idx>0?DATA.c[idx-1].color:CREAM);
+}
+const nav=$("#nav");
+["Inicio",...DATA.c.map((p,i)=>`${i+1} · ${p.short}`)].forEach((t,k)=>{ const b=el("button",null,t); b.onclick=()=>go(k); nav.appendChild(b); });
+$("#aL").onclick=()=>go(idx-1); $("#aR").onclick=()=>go(idx+1); $("#home").onclick=()=>go(0);
+$("#bAll").onclick=()=>chapters[idx-1] && chapters[idx-1].open();
+$("#bNone").onclick=()=>chapters[idx-1] && chapters[idx-1].close();
+addEventListener("keydown",e=>{ if(e.key==="ArrowRight"||e.key==="PageDown") go(idx+1); else if(e.key==="ArrowLeft"||e.key==="PageUp") go(idx-1); else if(/^[0-3]$/.test(e.key)) go(+e.key); });
+let cool=0, acc=0;
+addEventListener("wheel",e=>{ e.preventDefault(); const now=performance.now(); if(now<cool) return; acc+= (Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY);
+  if(Math.abs(acc)>70){ go(idx+(acc>0?1:-1)); acc=0; cool=now+1100; } },{passive:false});
+let sx=null; addEventListener("pointerdown",e=>{ sx=e.clientX; }); addEventListener("pointerup",e=>{ if(sx!=null && Math.abs(e.clientX-sx)>110) go(idx+(e.clientX<sx?1:-1)); sx=null; });
+addEventListener("resize",()=>{ fitScale(); document.body.classList.remove("smooth"); apply(); requestAnimationFrame(()=>document.body.classList.add("smooth")); });
+
+/* ============ inicio ============ */
+fitScale();
+chapters.forEach(c=>{ c.sec.querySelector(".big").setAttribute("tabindex","0"); });
+const h=location.hash.replace("#","");
+if(h){ const m=h.match(/^(\d)(todo)?$/); if(m){ idx=+m[1]; if(m[2] && chapters[idx-1]) chapters[idx-1].open(); if(idx===0) doSplit(); } }
+apply();
+requestAnimationFrame(()=>requestAnimationFrame(()=>document.body.classList.add("smooth")));
 </script>
 </body>
 </html>
