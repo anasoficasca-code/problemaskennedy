@@ -6,436 +6,400 @@
 <title>Problemáticas de Kennedy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#000; --fg:#f1f0f5; --muted:#8c8a99;
-    --root:#ff5a5f; --p1:#ff7ac6; --p2:#ffc857; --p3:#4dd8ff;
-    --serif:"Cormorant Garamond",Georgia,serif; --sans:"Outfit","Segoe UI",system-ui,sans-serif;
+    --bg:#000; --fg:#f4f4f4; --muted:#8a8a8a; --line:#2e2e2e;
+    --root:#ffffff; --p1:#ff5a36; --p2:#ffd23f; --p3:#3ec6ff;
+    --f:"Space Grotesk","Segoe UI",system-ui,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);
-    font-family:var(--sans);user-select:none;-webkit-user-select:none}
-  #stage{position:fixed;inset:0;cursor:grab;touch-action:none;background:#000}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--f);
+    user-select:none;-webkit-user-select:none}
+  #stage{position:fixed;inset:0;cursor:grab;
+    background-color:#000;background-image:radial-gradient(#202020 1px,transparent 1.2px);background-size:28px 28px}
   #stage.drag{cursor:grabbing}
-  #art{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-  #vignette{position:absolute;inset:0;pointer-events:none;
-    background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.75) 100%)}
-  #world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
-  #world.anim{transition:transform 1s cubic-bezier(.22,.8,.25,1)}
-  #edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+  svg#graph{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
 
-  .ring{fill:none;stroke:#fff;stroke-width:1;stroke-dasharray:2 10;opacity:0;transition:opacity 1.2s}
-  .ring.on{opacity:.09}
-  .edge{fill:none;stroke-width:2.2;stroke-linecap:round;opacity:0;
-    stroke-dasharray:1;stroke-dashoffset:1;transition:opacity .6s,stroke-dashoffset .9s ease;filter:drop-shadow(0 0 4px currentColor)}
-  .edge.on{opacity:.85;stroke-dashoffset:0}
-  .pt{opacity:0;transition:opacity .8s .6s}
-  .pt.on{opacity:.95}
+  /* ---- aristas ---- */
+  .link{stroke:#3a3a3a;stroke-width:1.6;fill:none;animation:fade .6s;transition:stroke .2s,opacity .25s}
+  .link.hot{stroke:var(--c);stroke-width:3;stroke-dasharray:8 7;animation:flow .9s linear infinite}
+  .link.dim{opacity:.1}
+  @keyframes flow{to{stroke-dashoffset:-15}}
+  @keyframes fade{from{opacity:0}}
 
-  /* ----- nodos ----- */
-  .node{position:absolute;left:0;top:0;width:156px;margin-left:-78px;
-    display:flex;flex-direction:column;align-items:center;opacity:0;pointer-events:none;
-    transition:transform .9s cubic-bezier(.2,1.15,.3,1),opacity .5s}
-  .node.on{opacity:1;pointer-events:auto}
-  .float{display:flex;flex-direction:column;align-items:center;animation:bob var(--bd,7s) ease-in-out var(--bl,0s) infinite}
-  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(var(--ba,-7px))}}
-  .orb{position:relative;width:66px;height:66px;border-radius:50%;display:grid;place-items:center;color:var(--c);
-    background:
-      radial-gradient(circle at 30% 22%,rgba(255,255,255,.28),transparent 38%),
-      radial-gradient(circle at 50% 60%,color-mix(in srgb,var(--c) 30%,#0a0a10),#050508 78%);
-    border:1.5px solid color-mix(in srgb,var(--c) 85%,transparent);
-    box-shadow:0 0 18px color-mix(in srgb,var(--c) 45%,transparent),
-               0 0 60px color-mix(in srgb,var(--c) 18%,transparent),
-               inset 0 0 16px color-mix(in srgb,var(--c) 25%,transparent);
-    transition:transform .25s,box-shadow .25s}
-  .orb::before{content:"";position:absolute;inset:-9px;border-radius:50%;
-    background:conic-gradient(from 0deg,transparent 0 55%,var(--c) 75%,transparent 95%);
-    -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 1.5px),#000 calc(100% - 1px));
-            mask:radial-gradient(farthest-side,transparent calc(100% - 1.5px),#000 calc(100% - 1px));
-    opacity:.0;animation:spin 6s linear infinite;transition:opacity .4s}
-  .node.has:not(.open) .orb::before{opacity:.9}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .orb svg{width:28px;height:28px;stroke-width:1.5;filter:drop-shadow(0 0 5px var(--c))}
-  .node.has{cursor:pointer}
-  .node.has:hover .orb{transform:scale(1.13);box-shadow:0 0 30px var(--c),0 0 90px color-mix(in srgb,var(--c) 35%,transparent),inset 0 0 18px color-mix(in srgb,var(--c) 40%,transparent)}
-  .node.sel .orb{box-shadow:0 0 34px var(--c),0 0 0 5px color-mix(in srgb,var(--c) 25%,transparent)}
-  .badge{position:absolute;right:-7px;bottom:-5px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;
-    background:var(--c);color:#050508;font:600 12px var(--sans);display:grid;place-items:center;
-    box-shadow:0 0 12px var(--c)}
-  .label{margin-top:12px;font:400 12.5px/1.3 var(--sans);letter-spacing:.2px;text-align:center;color:#e9e8ef;
-    max-width:156px;text-shadow:0 0 8px #000,0 0 14px #000,0 1px 2px #000}
+  /* ---- nodos ---- */
+  .node{cursor:pointer;transition:opacity .25s}
+  .node.dim{opacity:.14}
+  .body{transform-box:fill-box;transform-origin:center;animation:pop .65s cubic-bezier(.2,1.25,.3,1)}
+  @keyframes pop{from{transform:scale(0)}}
+  .hov{transform-box:fill-box;transform-origin:center;transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
+  .node:hover .hov{transform:scale(1.14)}
+  .disc{stroke-width:3;transition:stroke-width .2s}
+  .d0 .disc{fill:#fff;stroke:#fff}
+  .d0 .ico{color:#000}
+  .d1 .disc{fill:var(--c);stroke:var(--c)}
+  .d1 .ico{color:#000}
+  .d2 .disc{fill:#000;stroke:var(--c)}
+  .d2 .ico{color:var(--c)}
+  .node:hover .disc{stroke-width:5}
+  .ico{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+  .ping{fill:none;stroke:var(--c);stroke-width:2;transform-box:fill-box;transform-origin:center;animation:ping 2.2s ease-out infinite;pointer-events:none}
+  .d0 .ping{stroke:#fff}
+  .node.open .ping{display:none}
+  @keyframes ping{from{transform:scale(1);opacity:.85}to{transform:scale(1.9);opacity:0}}
+  .node.flash .hov{animation:flash .5s ease-in-out 4}
+  @keyframes flash{50%{transform:scale(1.4)}}
+  .badge circle{fill:var(--c);stroke:#000;stroke-width:2.5}
+  .d0 .badge circle{fill:var(--p1)}
+  .badge text{fill:#000;font:700 11px var(--f);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+  .lbl{font:500 13px var(--f);fill:#eee;text-anchor:middle;pointer-events:none;
+    paint-order:stroke;stroke:#000;stroke-width:5px;stroke-linejoin:round}
+  .d1 .lbl{font:700 14px var(--f);fill:#fff;text-transform:uppercase;letter-spacing:.6px}
+  .d0 .lbl{font:700 17px var(--f);fill:#fff;text-transform:uppercase;letter-spacing:.8px}
 
-  .node.lvl1{width:190px;margin-left:-95px}
-  .node.lvl1 .orb{width:92px;height:92px;
-    background:radial-gradient(circle at 30% 22%,rgba(255,255,255,.35),transparent 36%),
-               radial-gradient(circle at 50% 60%,color-mix(in srgb,var(--c) 55%,#0a0a10),color-mix(in srgb,var(--c) 14%,#050508) 85%)}
-  .node.lvl1 .orb svg{width:38px;height:38px;color:#fff;filter:drop-shadow(0 0 8px var(--c))}
-  .node.lvl1 .label{font:500 14.5px/1.3 var(--sans);color:#fff;max-width:190px}
-
-  .node.root{width:240px;margin-left:-120px}
-  .node.root .orb{width:132px;height:132px;animation:breathe 4s ease-in-out infinite;
-    background:radial-gradient(circle at 30% 22%,rgba(255,255,255,.4),transparent 36%),
-               radial-gradient(circle at 50% 60%,#ff7b7f,#b0262c 55%,#3a0608 100%)}
-  .node.root .orb svg{width:56px;height:56px;color:#fff}
-  .node.root .orb::before{display:none}
-  .node.root .label{font:italic 600 20px/1.2 var(--serif);color:#fff;max-width:240px;margin-top:20px}
-  @keyframes breathe{0%,100%{box-shadow:0 0 30px var(--c),0 0 90px color-mix(in srgb,var(--c) 30%,transparent),inset 0 0 22px rgba(255,255,255,.12)}
-    50%{box-shadow:0 0 60px var(--c),0 0 160px color-mix(in srgb,var(--c) 45%,transparent),inset 0 0 30px rgba(255,255,255,.2)}}
-  .orbit{position:absolute;left:50%;top:66px;width:0;height:0;pointer-events:none}
-  .orbit svg{position:absolute;overflow:visible;left:-110px;top:-110px;width:220px;height:220px;animation:spin 28s linear infinite}
-  .orbit svg.r2{animation-duration:45s;animation-direction:reverse;left:-150px;top:-150px;width:300px;height:300px}
-  .orbit circle{fill:none;stroke:var(--root);stroke-width:1.2}
-
-  .ripple{position:absolute;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;
-    border:2px solid var(--c);pointer-events:none;opacity:.9;animation:ripple 1.3s ease-out forwards}
-  @keyframes ripple{to{transform:scale(7);opacity:0;border-width:.5px}}
-
-  /* ----- interfaz ----- */
-  #title{position:fixed;left:30px;top:24px;pointer-events:none;z-index:5}
-  #title h1{font:italic 600 38px/1 var(--serif);letter-spacing:.3px;
-    background:linear-gradient(100deg,#fff 10%,var(--p1) 45%,var(--p3) 90%);-webkit-background-clip:text;background-clip:text;color:transparent}
-  #title p{font:300 12px var(--sans);letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin-top:10px;max-width:320px;line-height:1.7}
-  #hint{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:5;pointer-events:none;
-    display:flex;gap:10px;align-items:center;color:#ddd;font:300 14px var(--sans);letter-spacing:1.5px;
-    padding:10px 20px;border:1px solid rgba(255,255,255,.18);border-radius:30px;background:rgba(255,255,255,.04);
-    backdrop-filter:blur(8px);transition:opacity .6s;animation:floaty 2.6s ease-in-out infinite}
-  #hint svg{width:18px;height:18px;color:var(--root)}
+  /* ---- interfaz (plana, sin brillos) ---- */
+  #title{position:fixed;left:32px;top:28px;pointer-events:none;z-index:5}
+  #title h1{font:700 44px/.95 var(--f);letter-spacing:-1.5px;text-transform:uppercase}
+  #title h1 span{color:var(--p1)}
+  #title p{font:400 13px/1.5 var(--f);color:var(--muted);margin-top:14px;max-width:290px}
+  #search{position:fixed;left:50%;top:26px;transform:translateX(-50%);z-index:7;width:min(380px,calc(100vw - 420px))}
+  #q{width:100%;background:#000;color:#fff;border:1.5px solid #3a3a3a;border-radius:0;padding:12px 14px;font:500 14px var(--f);outline:none;transition:border-color .2s}
+  #q:focus{border-color:#fff}
+  #q::placeholder{color:#777}
+  #res{background:#0b0b0b;border:1.5px solid #fff;border-top:0;display:none;max-height:300px;overflow:auto}
+  #res.show{display:block}
+  #res div{padding:10px 14px;font:400 13px/1.35 var(--f);cursor:pointer;display:flex;gap:10px;align-items:center;border-left:4px solid var(--c)}
+  #res div:hover,#res div.act{background:#1c1c1c}
+  #hint{position:fixed;left:50%;bottom:104px;transform:translateX(-50%);z-index:5;pointer-events:none;
+    font:500 13px var(--f);letter-spacing:2px;text-transform:uppercase;color:#000;background:#fff;padding:10px 16px;
+    animation:bounce 1.6s ease-in-out infinite;transition:opacity .4s}
   #hint.hide{opacity:0}
-  @keyframes floaty{50%{transform:translate(-50%,-7px)}}
-  #legend{position:fixed;left:30px;bottom:28px;z-index:5;display:flex;flex-direction:column;gap:9px;font:300 12.5px var(--sans);color:#b9b7c6;letter-spacing:.4px}
-  #legend span{display:flex;align-items:center;gap:11px}
-  #legend i{width:9px;height:9px;border-radius:50%;display:inline-block;background:currentColor;box-shadow:0 0 10px currentColor,0 0 22px currentColor}
-  #legend em{font-style:normal;color:#c9c7d4}
-  #tools{position:fixed;right:22px;bottom:22px;z-index:5;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-  button{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);color:#eee;
-    border:1px solid rgba(255,255,255,.16);border-radius:30px;padding:10px 16px;font:400 13px var(--sans);letter-spacing:.4px;
-    cursor:pointer;backdrop-filter:blur(8px);transition:background .25s,border-color .25s,transform .2s}
-  button:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.5);transform:translateY(-2px)}
-  button svg{width:16px;height:16px}
-  button.sq{padding:10px 12px}
-  #card{position:fixed;right:22px;top:22px;width:min(340px,calc(100vw - 44px));z-index:6;padding:20px 22px;
-    background:rgba(10,10,16,.72);backdrop-filter:blur(14px);border:1px solid color-mix(in srgb,var(--c,#444) 60%,transparent);border-radius:20px;
-    box-shadow:0 0 40px color-mix(in srgb,var(--c,#444) 28%,transparent);
-    opacity:0;transform:translateY(-10px) scale(.98);transition:opacity .35s,transform .35s;pointer-events:none}
+  @keyframes bounce{50%{transform:translate(-50%,-8px)}}
+  #legend{position:fixed;left:32px;bottom:30px;z-index:5;display:flex;flex-direction:column;gap:10px;font:400 13px var(--f);color:#cfcfcf}
+  #legend span{display:flex;align-items:center;gap:12px}
+  #legend i{width:14px;height:14px;border-radius:50%;display:inline-block;background:currentColor}
+  #legend em{font-style:normal;color:#d6d6d6}
+  #tools{position:fixed;right:24px;bottom:24px;z-index:5;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  button{background:#000;color:#fff;border:1.5px solid #3a3a3a;border-radius:0;padding:11px 16px;
+    font:500 12px var(--f);letter-spacing:1.2px;text-transform:uppercase;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+  button:hover{background:#fff;color:#000;border-color:#fff}
+  #card{position:fixed;right:24px;top:24px;width:min(340px,calc(100vw - 48px));z-index:6;padding:20px 22px 20px;
+    background:#0b0b0b;border:1.5px solid #2e2e2e;border-left:8px solid var(--c,#fff);
+    opacity:0;transform:translateX(14px);transition:opacity .2s,transform .2s;pointer-events:none}
   #card.show{opacity:1;transform:none}
-  #card .ic svg{width:30px;height:30px;color:var(--c);stroke-width:1.5;filter:drop-shadow(0 0 6px var(--c))}
-  #card h2{font:italic 600 22px/1.2 var(--serif);margin:10px 0 12px}
-  #card .path{font:300 12.5px/1.6 var(--sans);color:var(--muted)}
-  #card .path b{color:#d6d4e0;font-weight:500}
+  #card .tag{font:500 11px var(--f);letter-spacing:1.6px;text-transform:uppercase;color:var(--c)}
+  #card h2{font:700 21px/1.2 var(--f);margin:8px 0 14px;letter-spacing:-.3px}
+  #card .path{font:400 13px/1.55 var(--f);color:#9a9a9a;border-top:1px solid #262626;padding-top:12px}
+  #card .path b{color:#e4e4e4;font-weight:500}
+  #card .more{margin-top:12px;font:500 11px var(--f);letter-spacing:1.4px;text-transform:uppercase;color:#fff}
+  @media (max-width:900px){
+    #search{left:auto;right:24px;transform:none;top:auto;bottom:80px;width:calc(100vw - 48px)}
+    #res{position:absolute;bottom:100%;border-top:1.5px solid #fff;border-bottom:0}
+    #hint{bottom:150px}
+  }
   @media (max-width:640px){
-    #title h1{font-size:28px} #title p{display:none} #legend{display:none}
-    #card{top:auto;bottom:74px;right:12px;left:12px;width:auto}
-    #hint{bottom:140px}
+    #title h1{font-size:30px} #title p{display:none} #legend{display:none}
+    #card{top:auto;bottom:140px;right:12px;left:12px;width:auto}
   }
 </style>
 </head>
 <body>
-<div id="stage">
-  <canvas id="art"></canvas>
-  <div id="world"><svg id="edges" width="1" height="1"><defs id="defs"></defs><g id="rings"></g></svg></div>
-  <div id="vignette"></div>
-</div>
+<div id="stage"><svg id="graph"><g id="vp"><g id="links"></g><g id="nodes"></g></g></svg></div>
 
 <div id="title">
-  <h1>Problemáticas de Kennedy</h1>
-  <p>Cartografía causal de la fragmentación territorial</p>
+  <h1>Problemáticas<br>de <span>Kennedy</span></h1>
+  <p>Mapa causal de la fragmentación territorial. Toca, arrastra y explora cada conexión.</p>
 </div>
-<div id="hint"><i data-lucide="hand"></i> Toca la esfera central para comenzar</div>
+<div id="search"><input id="q" placeholder="Buscar una problemática…" autocomplete="off"><div id="res"></div></div>
+<div id="hint">Toca la esfera blanca</div>
 <div id="legend">
   <span style="color:var(--p1)"><i></i><em>Hiperconcentración del mercado mayorista</em></span>
   <span style="color:var(--p2)"><i></i><em>Saturación de los residuos</em></span>
   <span style="color:var(--p3)"><i></i><em>Degradación del soporte ecológico</em></span>
 </div>
 <div id="tools">
-  <button id="bExpand"><i data-lucide="sparkles"></i>Expandir todo</button>
-  <button id="bReset"><i data-lucide="rotate-ccw"></i>Reiniciar</button>
-  <button id="bFit" class="sq" title="Ajustar"><i data-lucide="maximize"></i></button>
-  <button id="bIn" class="sq" title="Acercar"><i data-lucide="plus"></i></button>
-  <button id="bOut" class="sq" title="Alejar"><i data-lucide="minus"></i></button>
+  <button id="bExpand">Expandir todo</button>
+  <button id="bReset">Reiniciar</button>
+  <button id="bFit">Ajustar</button>
+  <button id="bIn">+</button>
+  <button id="bOut">−</button>
 </div>
-<div id="card"><div class="ic"></div><h2></h2><div class="path"></div></div>
+<div id="card"><div class="tag"></div><h2></h2><div class="path"></div><div class="more"></div></div>
 
+<script src="lib/d3.min.js"></script>
 <script src="lib/lucide.min.js"></script>
 <script>
-/* ---------- Datos (basados en el tablero de Miro) · i = nombre de icono Lucide ---------- */
+/* ---------- Datos (tablero de Miro) · i = icono Lucide · s = etiqueta corta ---------- */
 const DATA = {
-  t:"La Fragmentación Territorial", i:"puzzle", c:[
-  { t:"Hiperconcentración del mercado mayorista", i:"store", color:"--p1", c:[
-      { t:"Dependencia alimentaria", i:"shopping-basket", c:[
-        { t:"Pérdida de producción local", i:"sprout", c:[
-          { t:"Modelo económico: más rentable convertir tierra rural en suelo urbano", i:"banknote", c:[
-            { t:"Crecimiento demográfico acelerado", i:"users", c:[
-              { t:"Expulsión violenta de millones de campesinos de sus tierras rurales", i:"tractor" }
+  t:"La Fragmentación Territorial", i:"Puzzle", c:[
+  { t:"Hiperconcentración del mercado mayorista", i:"Store", color:"--p1", c:[
+      { t:"Dependencia alimentaria", i:"ShoppingBasket", c:[
+        { t:"Pérdida de producción local", i:"Sprout", c:[
+          { t:"Modelo económico: más rentable convertir tierra rural en suelo urbano", s:"Tierra rural convertida en suelo urbano", i:"Banknote", c:[
+            { t:"Crecimiento demográfico acelerado", i:"Users", c:[
+              { t:"Expulsión violenta de millones de campesinos de sus tierras rurales", s:"Expulsión violenta de campesinos", i:"Tractor" }
             ]}
           ]}
         ]}
       ]},
-      { t:"Modelo de higiene estatal y salubridad pública", i:"spray-can", c:[
-        { t:"Crisis epidémicas y brotes de enfermedades infecciosas", i:"biohazard", c:[
-          { t:"Descomposición acelerada de alimentos al aire libre", i:"apple", c:[
-            { t:"Carencia de infraestructura tecnológica", i:"cpu", c:[
-              { t:"Industrialización tardía del país", i:"factory", c:[
-                { t:"La monoexportación cafetera", i:"coffee" }
+      { t:"Modelo de higiene estatal y salubridad pública", i:"SprayCan", c:[
+        { t:"Crisis epidémicas y brotes de enfermedades infecciosas", s:"Crisis epidémicas y brotes infecciosos", i:"Biohazard", c:[
+          { t:"Descomposición acelerada de alimentos al aire libre", i:"Apple", c:[
+            { t:"Carencia de infraestructura tecnológica", i:"Cpu", c:[
+              { t:"Industrialización tardía del país", i:"Factory", c:[
+                { t:"La monoexportación cafetera", i:"Coffee" }
               ]}
             ]}
           ]}
         ]}
       ]},
-      { t:"Sobrecarga de la red de transporte", i:"bus", c:[
-        { t:"Concentración espacial de origen y destino", i:"map-pin", c:[
-          { t:"Densificación residencial en altura", i:"building-2", c:[
-            { t:"Especulación del suelo", i:"trending-up", c:[
-              { t:"Escasez de suelo", i:"layers" }
+      { t:"Sobrecarga de la red de transporte", i:"Bus", c:[
+        { t:"Concentración espacial de origen y destino", i:"MapPin", c:[
+          { t:"Densificación residencial en altura", i:"Building2", c:[
+            { t:"Especulación del suelo", i:"TrendingUp", c:[
+              { t:"Escasez de suelo", i:"Layers" }
             ]}
           ]},
-          { t:"Clusters laborales", i:"briefcase", c:[
-            { t:"Proceso histórico de expansión monocéntrica de Bogotá", i:"target", c:[
-              { t:"Economías de aglomeración", i:"network" }
+          { t:"Clusters laborales", i:"Briefcase", c:[
+            { t:"Proceso histórico de expansión monocéntrica de Bogotá", s:"Expansión monocéntrica de Bogotá", i:"Target", c:[
+              { t:"Economías de aglomeración", i:"Network" }
             ]}
           ]}
         ]},
-        { t:"Desplazamientos masivos en franjas horarias específicas", i:"footprints", c:[
-          { t:"Factores culturales e institucionales estandarizados", i:"landmark" },
-          { t:"Modelo de sincronización industrial y horarios rígidos", i:"settings" }
+        { t:"Desplazamientos masivos en franjas horarias específicas", s:"Desplazamientos masivos por franjas horarias", i:"Footprints", c:[
+          { t:"Factores culturales e institucionales estandarizados", i:"Landmark" },
+          { t:"Modelo de sincronización industrial y horarios rígidos", i:"Settings" }
         ]}
       ]}
   ]},
-  { t:"Saturación de los residuos", i:"trash-2", color:"--p2", c:[
-      { t:"Presión sobre los sistemas de saneamiento", i:"gauge", c:[
-        { t:"Generación de aguas residuales", i:"droplet", c:[
-          { t:"Cargas contaminantes en aguas superficiales", i:"flask-conical" }
+  { t:"Saturación de los residuos", i:"Trash2", color:"--p2", c:[
+      { t:"Presión sobre los sistemas de saneamiento", i:"Gauge", c:[
+        { t:"Generación de aguas residuales", i:"Droplet", c:[
+          { t:"Cargas contaminantes en aguas superficiales", i:"FlaskConical" }
         ]}
       ]}
   ]},
-  { t:"Degradación de la capacidad de soporte ecológico", i:"globe", color:"--p3", c:[
-      { t:"Deterioro de la calidad del aire", i:"wind", c:[
-        { t:"Emisiones de NO₂ y CO", i:"car" }
+  { t:"Degradación de la capacidad de soporte ecológico", i:"Globe", color:"--p3", c:[
+      { t:"Deterioro de la calidad del aire", i:"Wind", c:[
+        { t:"Emisiones de NO₂ y CO", i:"Car" }
       ]},
-      { t:"Deterioro de la calidad del agua", i:"droplets" },
-      { t:"Pérdida de la biodiversidad", i:"bird", c:[
-        { t:"Falta de disponibilidad de hábitats naturales", i:"tree-pine" }
+      { t:"Deterioro de la calidad del agua", i:"Droplets" },
+      { t:"Pérdida de la biodiversidad", i:"Bird", c:[
+        { t:"Falta de disponibilidad de hábitats naturales", i:"TreePine" }
       ]},
-      { t:"Vulnerabilidad frente a eventos de lluvia", i:"cloud-rain" },
-      { t:"Planificación urbana orientada al mercado y no a la descentralización", i:"pencil-ruler", c:[
-        { t:"Transformación en superficies construidas", i:"construction", c:[
-          { t:"Alteración de las condiciones del suelo", i:"mountain" },
-          { t:"Impermeabilización del suelo", i:"brick-wall" },
-          { t:"Fragmentación de la cobertura vegetal", i:"scissors" },
-          { t:"Pérdida de la cobertura vegetal", i:"leaf" }
+      { t:"Vulnerabilidad frente a eventos de lluvia", i:"CloudRain" },
+      { t:"Planificación urbana orientada al mercado y no a la descentralización", s:"Planificación urbana orientada al mercado", i:"PencilRuler", c:[
+        { t:"Transformación en superficies construidas", i:"Construction", c:[
+          { t:"Alteración de las condiciones del suelo", i:"Mountain" },
+          { t:"Impermeabilización del suelo", i:"BrickWall" },
+          { t:"Fragmentación de la cobertura vegetal", i:"Scissors" },
+          { t:"Pérdida de la cobertura vegetal", i:"Leaf" }
         ]}
       ]}
   ]}
 ]};
-// Orden en el círculo: mercado abajo, ecológico izquierda/arriba, residuos derecha.
-DATA.c = [DATA.c[0], DATA.c[2], DATA.c[1]];
+DATA.c = [DATA.c[0], DATA.c[2], DATA.c[1]];   // mercado abajo · ecológico izq/arriba · residuos derecha
 
-/* ---------- Layout radial ---------- */
-const RING = 240, FIRST = 280;
+/* ---------- Preparación del árbol ---------- */
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 let all = [], idn = 0;
-function prep(n, parent, depth, color){
+function prep(n, parent, depth, color, branch){
   n.id = idn++; n.parent = parent; n.depth = depth; n.open = false; n.vis = false;
-  n.color = n.color ? css(n.color) : (color || css("--root"));
+  n.color = n.color ? css(n.color) : (color || "#ffffff");
+  n.branch = depth===1 ? n.t : branch;
   n.kids = n.c || [];
+  n.r = depth===0 ? 58 : depth===1 ? 42 : 27;
   all.push(n);
-  n.kids.forEach(k => prep(k, n, depth+1, n.color));
+  n.kids.forEach(k => prep(k, n, depth+1, n.color, n.branch));
   n.w = Math.max(1, n.kids.reduce((s,k)=>s+k.w,0));
   if (depth === 1) n.w = Math.max(n.w, 3.5);
 }
-prep(DATA, null, 0, null);
+prep(DATA, null, 0, null, null);
 
+// posiciones "hogar": la física las respeta suavemente para que el mapa conserve su orden
+const FIRST = 250, RING = 175;
 function place(n, a0, a1){
-  const a = (a0+a1)/2;
-  const r = n.depth===0 ? 0 : FIRST + (n.depth-1)*RING;
-  n.x = Math.cos(a)*r; n.y = Math.sin(a)*r;
+  const a = (a0+a1)/2, r = n.depth===0 ? 0 : FIRST + (n.depth-1)*RING;
+  n.hx = Math.cos(a)*r*1.7; n.hy = Math.sin(a)*r*.82;   // elipse: aprovecha pantallas anchas
   let cur = a0; const span = a1-a0, tot = n.kids.reduce((s,k)=>s+k.w,0);
   n.kids.forEach(k => { const s = span*k.w/tot; place(k, cur, cur+s); cur += s; });
 }
-const w1 = DATA.kids.reduce((s,k)=>s+k.w,0);
-const bottomSpan = 2*Math.PI*DATA.kids[0].w/w1;
-const startA = Math.PI/2 - bottomSpan/2;
-place(DATA, startA, startA + 2*Math.PI);
+const w1 = DATA.kids.reduce((s,k)=>s+k.w,0), bottom = 2*Math.PI*DATA.kids[0].w/w1, a0 = Math.PI/2 - bottom/2;
+place(DATA, a0, a0 + 2*Math.PI);
 
-/* ---------- DOM ---------- */
-const stage = document.getElementById("stage"), world = document.getElementById("world"),
-      svg = document.getElementById("edges"), defs = document.getElementById("defs"), ringsG = document.getElementById("rings"),
-      card = document.getElementById("card"), hint = document.getElementById("hint");
-const NS = "http://www.w3.org/2000/svg";
-const maxDepth = Math.max(...all.map(n=>n.depth));
+/* ---------- Escena ---------- */
+const svg = d3.select("#graph"), vp = d3.select("#vp"), gL = d3.select("#links"), gN = d3.select("#nodes");
+const card = document.getElementById("card"), hint = document.getElementById("hint"), stageEl = document.getElementById("stage");
+let W = innerWidth, H = innerHeight, T = d3.zoomIdentity, pinned = null, hovered = null;
 
-// anillos orbitales
-const rings = [];
-for (let d=1; d<=maxDepth; d++){
-  const c = document.createElementNS(NS,"circle");
-  c.setAttribute("r", FIRST+(d-1)*RING); c.setAttribute("class","ring"); ringsG.appendChild(c); rings[d]=c;
+const sim = d3.forceSimulation([])
+  .force("link",   d3.forceLink([]).distance(d => d.target.depth===1 ? 190 : 120).strength(.55))
+  .force("charge", d3.forceManyBody().strength(d => d.depth===0 ? -300 : d.depth===1 ? -220 : -120).distanceMax(380))
+  .force("collide",d3.forceCollide(d => d.r + 38).strength(.9))
+  .force("x", d3.forceX(d => d.hx).strength(.11))
+  .force("y", d3.forceY(d => d.hy).strength(.11))
+  .velocityDecay(.38).alphaDecay(.03).alphaTarget(.012)
+  .on("tick", tick);
+
+let linkSel = gL.selectAll("line"), nodeSel = gN.selectAll("g");
+function tick(){
+  linkSel.attr("x1",d=>d.source.x).attr("y1",d=>d.source.y).attr("x2",d=>d.target.x).attr("y2",d=>d.target.y);
+  nodeSel.attr("transform",d=>`translate(${d.x},${d.y})`);
 }
 
-all.forEach(n => {
-  const el = document.createElement("div");
-  el.className = "node lvl" + Math.min(n.depth,2) + (n.depth===0?" root":"") + (n.kids.length?" has":"");
-  el.style.setProperty("--c", n.color);
-  const rnd = (a,b)=>a+Math.random()*(b-a);
-  el.innerHTML = `<div class="float" style="--bd:${rnd(5,9).toFixed(1)}s;--bl:${(-rnd(0,8)).toFixed(1)}s;--ba:${rnd(-9,-4).toFixed(1)}px">
-      <div class="orb"><i data-lucide="${n.i}"></i>${n.kids.length?`<span class="badge">${n.kids.length}</span>`:""}</div>
-      <div class="label"></div></div>`;
-  el.querySelector(".label").textContent = n.t;
-  if (n.depth===0){
-    const o = document.createElement("div"); o.className="orbit";
-    o.innerHTML = `<svg viewBox="0 0 220 220"><circle cx="110" cy="110" r="108" stroke-dasharray="4 14"/></svg><svg class="r2" viewBox="0 0 300 300"><circle cx="150" cy="150" r="148" stroke-dasharray="1 9"/></svg>`;
-    el.querySelector(".orb").appendChild(o);
-  }
-  n.el = el; world.appendChild(el);
-  setPos(n, n.parent || n);
-  if (n.parent){
-    const p = n.parent, mx=(p.x+n.x)/2, my=(p.y+n.y)/2, dx=n.x-p.x, dy=n.y-p.y;
-    const g = document.createElementNS(NS,"linearGradient");
-    g.setAttribute("id","g"+n.id); g.setAttribute("gradientUnits","userSpaceOnUse");
-    g.setAttribute("x1",p.x); g.setAttribute("y1",p.y); g.setAttribute("x2",n.x); g.setAttribute("y2",n.y);
-    g.innerHTML = `<stop offset="0" stop-color="${p.color}"/><stop offset="1" stop-color="${n.color}"/>`;
-    defs.appendChild(g);
-    const path = document.createElementNS(NS,"path");
-    path.setAttribute("class","edge"); path.setAttribute("pathLength","1"); path.setAttribute("id","e"+n.id);
-    path.setAttribute("stroke",`url(#g${n.id})`); path.style.color = n.color;
-    path.setAttribute("d",`M${p.x},${p.y} Q${mx-dy*.16},${my+dx*.16} ${n.x},${n.y}`);
-    svg.appendChild(path); n.edge = path;
-    const pt = document.createElementNS(NS,"circle");
-    pt.setAttribute("r","2.8"); pt.setAttribute("fill","#fff"); pt.setAttribute("class","pt");
-    pt.style.filter = `drop-shadow(0 0 5px ${n.color})`;
-    pt.innerHTML = `<animateMotion dur="${(3+Math.random()*2).toFixed(1)}s" repeatCount="indefinite"><mpath href="#e${n.id}"/></animateMotion>`;
-    svg.appendChild(pt); n.pt = pt;
-  }
-  el.addEventListener("click", e => { if (moved) return; e.stopPropagation(); select(n); toggle(n); });
-});
-lucide.createIcons();
-function setPos(n, at){ n.el.style.transform = `translate(${at.x}px,${at.y}px)`; }
+function wrap(s, max){
+  const out=[]; let line="";
+  s.split(" ").forEach(w=>{ if((line+" "+w).trim().length>max && line){ out.push(line); line=w; } else line=(line+" "+w).trim(); });
+  out.push(line); return out;
+}
+function drawIcon(g, n){
+  const def = lucide.icons[n.i]; if(!def) return;
+  const s = (n.r*0.95)/24;
+  const grp = d3.select(g).attr("transform",`translate(${-12*s},${-12*s}) scale(${s})`);
+  def[2].forEach(([tag, attrs]) => { const e = grp.append(tag); Object.entries(attrs).forEach(([k,v])=>e.attr(k,v)); });
+}
+function build(enter){
+  const g = enter.append("g")
+    .attr("class", d=>`node d${Math.min(d.depth,2)}${d.kids.length?" has":""}${d.open?" open":""}`)
+    .style("--c", d=>d.color)
+    .attr("transform", d=>`translate(${d.x},${d.y})`)
+    .on("click", onClick).on("mouseenter", onEnter).on("mouseleave", onLeave)
+    .call(d3.drag().clickDistance(5)
+      .on("start",(e,d)=>{ if(!e.active) sim.alphaTarget(.3).restart(); d.fx=d.x; d.fy=d.y; stageEl.classList.add("drag"); })
+      .on("drag", (e,d)=>{ d.fx=e.x; d.fy=e.y; })
+      .on("end",  (e,d)=>{ if(!e.active) sim.alphaTarget(.012); if(d.depth>0){ d.fx=null; d.fy=null; } stageEl.classList.remove("drag"); }));
+  const body = g.append("g").attr("class","body"), hov = body.append("g").attr("class","hov");
+  hov.filter(d=>d.kids.length).append("circle").attr("class","ping").attr("r",d=>d.r);
+  hov.append("circle").attr("class","disc").attr("r",d=>d.r);
+  hov.append("g").attr("class","ico").each(function(d){ drawIcon(this,d); });
+  const bd = hov.filter(d=>d.kids.length).append("g").attr("class","badge").attr("transform",d=>`translate(${d.r*.72},${d.r*.72})`);
+  bd.append("circle").attr("r",11); bd.append("text").text(d=>d.kids.length);
+  g.append("text").attr("class","lbl").each(function(d){
+    const lines = wrap(d.s || d.t, d.depth===0 ? 16 : d.depth===1 ? 17 : 19), t = d3.select(this);
+    lines.forEach((ln,i)=> t.append("tspan").attr("x",0).attr("y", d.r + 20 + i*(d.depth<2?17:15)).text(ln));
+  });
+  return g;
+}
+function render(){
+  const vn = all.filter(n=>n.vis);
+  const vl = vn.filter(n=>n.parent).map(n=>({source:n.parent, target:n}));
+  sim.nodes(vn); sim.force("link").links(vl);
+  linkSel = gL.selectAll("line.link").data(vl, d=>d.target.id).join(
+    e=>e.append("line").attr("class","link").style("--c",d=>d.target.color),
+    u=>u, x=>x.remove());
+  nodeSel = gN.selectAll("g.node").data(vn, d=>d.id).join(build, u=>u, x=>x.remove());
+  nodeSel.classed("open", d=>d.open);
+  nodeSel.select(".badge text").text(d=>d.open ? "−" : d.kids.length);
+  highlight(hovered || null);
+  sim.alpha(.85).restart(); tick();
+}
 
-function show(n, origin){
-  if (!n.vis){ setPos(n, origin||n.parent||n); void n.el.offsetWidth; }
-  n.vis = true; n.el.classList.add("on"); setPos(n, n);
-  if (n.edge){ n.edge.classList.add("on"); n.pt.classList.add("on"); }
-}
-function hide(n, origin){
-  n.vis = false; n.open = false; n.el.classList.remove("on","open"); setPos(n, origin);
-  if (n.edge){ n.edge.classList.remove("on"); n.pt.classList.remove("on"); }
-  n.kids.forEach(k => hide(k, origin));
-}
-function setBadge(n){ const b=n.el.querySelector(".badge"); if(b) b.textContent = n.open ? "−" : n.kids.length; }
-function updateRings(){ const md = Math.max(0,...all.filter(n=>n.vis).map(n=>n.depth)); rings.forEach((c,d)=>c && c.classList.toggle("on", d<=md)); }
-function ripple(n){ const r=document.createElement("div"); r.className="ripple"; r.style.cssText=`left:${n.x}px;top:${n.y+(n.depth===0?0:0)}px;--c:${n.color}`; world.appendChild(r); setTimeout(()=>r.remove(),1400); }
-function expand(n){ if(!n.kids.length) return; n.open=true; n.el.classList.add("open"); n.kids.forEach(k=>show(k,n)); setBadge(n); ripple(n); updateRings(); }
-function collapse(n){ n.open=false; n.el.classList.remove("open"); n.kids.forEach(k=>hide(k,n)); setBadge(n); updateRings(); }
-function toggle(n){
-  if(!n.kids.length) return;
+/* ---------- Mostrar / ocultar ---------- */
+function show(n){ if(n.vis) return; const p=n.parent; n.x=p.x+(Math.random()-.5)*8; n.y=p.y+(Math.random()-.5)*8; n.vx=n.vy=0; n.vis=true; }
+function hide(n){ n.vis=false; n.open=false; if(n.depth>0){ n.fx=n.fy=null; } n.kids.forEach(hide); }
+function expand(n){ n.open=true; n.kids.forEach(show); }
+function collapse(n){ n.open=false; n.kids.forEach(hide); }
+function onClick(e,n){
+  e.stopPropagation(); pinned=n; showCard(n);
+  if(!n.kids.length) { bump(n); return; }
   n.open ? collapse(n) : expand(n);
-  hint.classList.add("hide");
-  fitTo(n.open ? [n, ...n.kids] : visibleNodes(), n.open);
+  hint.classList.add("hide"); render(); settleFit();
 }
-function visibleNodes(){ return all.filter(n=>n.vis); }
-function expandAll(){ all.forEach(n=>{ if(n.kids.length){ n.open=true; n.el.classList.add("open"); n.kids.forEach(k=>show(k,n)); setBadge(n);} }); updateRings(); hint.classList.add("hide"); fitTo(visibleNodes()); }
-function reset(){ collapse(DATA); card.classList.remove("show"); all.forEach(n=>n.el.classList.remove("sel")); hint.classList.remove("hide"); fitTo([DATA]); }
+function bump(n){ nodeSel.filter(d=>d===n).classed("flash",false); void 0; nodeSel.filter(d=>d===n).classed("flash",true); setTimeout(()=>nodeSel.classed("flash",false),2100); }
+function expandAll(){ all.forEach(n=>{ if(n.kids.length){ n.open=true; n.kids.forEach(show); } }); hint.classList.add("hide"); render(); settleFit(true); }
+function reset(){ collapse(DATA); pinned=null; card.classList.remove("show"); hint.classList.remove("hide"); render(); toCenter(); }
 
-function select(n){
-  all.forEach(m=>m.el.classList.remove("sel")); n.el.classList.add("sel");
-  const trail=[]; for(let p=n.parent;p;p=p.parent) trail.push(p.t);
+/* ---------- Resaltado por linaje ---------- */
+function lineage(n){
+  const s = new Set(); for(let p=n;p;p=p.parent) s.add(p);
+  (function down(m){ m.kids.forEach(k=>{ if(k.vis){ s.add(k); down(k); } }); })(n);
+  return s;
+}
+function highlight(n){
+  if(!n){ nodeSel.classed("dim",false); linkSel.classed("hot",false).classed("dim",false); return; }
+  const s = lineage(n);
+  nodeSel.classed("dim", d=>!s.has(d));
+  linkSel.classed("hot", l=>s.has(l.source)&&s.has(l.target)).classed("dim", l=>!(s.has(l.source)&&s.has(l.target)));
+}
+function onEnter(e,n){ hovered=n; highlight(n); showCard(n); }
+function onLeave(){ hovered=null; highlight(null); if(pinned) showCard(pinned); else card.classList.remove("show"); }
+
+function showCard(n){
   card.style.setProperty("--c", n.color);
-  card.querySelector(".ic").innerHTML = `<i data-lucide="${n.i}"></i>`; lucide.createIcons();
+  card.querySelector(".tag").textContent = n.depth===0 ? "Fenómeno central" : n.branch;
   card.querySelector("h2").textContent = n.t;
-  card.querySelector(".path").innerHTML = trail.length
-    ? "<b>Se origina en:</b> " + trail.join(" ← ")
-    : "Todo el mapa parte de este fenómeno.";
+  const trail=[]; for(let p=n.parent;p;p=p.parent) trail.push(p.t);
+  card.querySelector(".path").innerHTML = trail.length ? "<b>Se origina en:</b> "+trail.join(" ← ") : "Todo el mapa parte de este fenómeno territorial.";
+  card.querySelector(".more").textContent = n.kids.length ? (n.open?"Clic para cerrar · ":"Clic para abrir · ")+n.kids.length+(n.kids.length>1?" causas":" causa") : "Sin más causas registradas";
   card.classList.add("show");
 }
-stage.addEventListener("click", e => { if(!moved && !e.target.closest(".node")){ card.classList.remove("show"); all.forEach(n=>n.el.classList.remove("sel")); } });
+svg.on("click", ()=>{ pinned=null; card.classList.remove("show"); });
 
 /* ---------- Cámara ---------- */
-let cam = {x:0,y:0,k:1};
-function apply(anim){ world.classList.toggle("anim", !!anim); world.style.transform = `translate(${cam.x}px,${cam.y}px) scale(${cam.k})`; }
-function fitTo(nodes, onlyIfNeeded){
-  const W=innerWidth, H=innerHeight, pad = 120;
-  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
-  nodes.forEach(n=>{ x0=Math.min(x0,n.x-95); x1=Math.max(x1,n.x+95); y0=Math.min(y0,n.y-70); y1=Math.max(y1,n.y+130); });
-  const bw=x1-x0, bh=y1-y0;
-  let k = Math.min((W-pad*2)/bw, (H-pad*2)/bh, 1.1);
-  if (onlyIfNeeded) k = Math.min(cam.k, k);
-  k = Math.max(.16, k);
-  cam = { k, x: W/2 - (x0+bw/2)*k, y: H/2 - (y0+bh/2)*k };
-  apply(true);
+const zoom = d3.zoom().scaleExtent([.15,3]).clickDistance(5)
+  .on("zoom", e=>{ T=e.transform; vp.attr("transform",T); })
+  .on("start", e=>{ if(e.sourceEvent && e.sourceEvent.type==="mousedown") stageEl.classList.add("drag"); })
+  .on("end", ()=>stageEl.classList.remove("drag"));
+svg.call(zoom).on("dblclick.zoom",null);
+function toCenter(){ svg.transition().duration(900).ease(d3.easeCubicOut).call(zoom.transform, d3.zoomIdentity.translate(W/2,H/2-20)); }
+function bounds(){
+  const v = all.filter(n=>n.vis); let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  v.forEach(n=>{ x0=Math.min(x0,n.x-80); x1=Math.max(x1,n.x+80); y0=Math.min(y0,n.y-n.r-10); y1=Math.max(y1,n.y+n.r+80); });
+  return {x0,y0,x1,y1};
 }
-let moved=false, drag=null;
-stage.addEventListener("pointerdown", e=>{ if (e.target.closest("button")) return; drag={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y}; moved=false; });
-addEventListener("pointermove", e=>{
-  if(!drag) return;
-  const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
-  if(!moved && Math.hypot(dx,dy)>5){ moved=true; stage.classList.add("drag"); }
-  if(moved){ cam.x=drag.cx+dx; cam.y=drag.cy+dy; apply(false); }
-});
-addEventListener("pointerup", ()=>{ drag=null; stage.classList.remove("drag"); setTimeout(()=>moved=false,0); });
-function zoomAt(f, cx, cy){
-  const nk = Math.min(2.5, Math.max(.12, cam.k*f)), r = nk/cam.k;
-  cam.x = cx - (cx-cam.x)*r; cam.y = cy - (cy-cam.y)*r; cam.k = nk; apply(false);
+function fit(force){
+  const b = bounds(), bw=b.x1-b.x0, bh=b.y1-b.y0, padX=60, top=110, bot=90;
+  const k = Math.min((W-padX*2)/bw, (H-top-bot)/bh, 1.15);
+  const tl = T.apply([b.x0,b.y0]), br = T.apply([b.x1,b.y1]);
+  const inside = tl[0]>=padX/2 && br[0]<=W-padX/2 && tl[1]>=top/2 && br[1]<=H-bot/2;
+  if(!force && inside) return;
+  const kk = force ? k : Math.min(k, T.k);
+  const t = d3.zoomIdentity.translate(W/2-(b.x0+bw/2)*kk, top+(H-top-bot)/2-(b.y0+bh/2)*kk).scale(kk);
+  svg.transition().duration(1000).ease(d3.easeCubicInOut).call(zoom.transform, t);
 }
-stage.addEventListener("wheel", e=>{ e.preventDefault(); zoomAt(e.deltaY<0?1.12:1/1.12, e.clientX, e.clientY); }, {passive:false});
-const pts = new Map(); let pd=0;
-stage.addEventListener("pointerdown", e=>pts.set(e.pointerId,e));
-stage.addEventListener("pointermove", e=>{
-  if(!pts.has(e.pointerId)) return; pts.set(e.pointerId,e);
-  if(pts.size===2){ const [a,b]=[...pts.values()]; const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
-    if(pd) zoomAt(d/pd,(a.clientX+b.clientX)/2,(a.clientY+b.clientY)/2); pd=d; }
-});
-const endPt = e=>{ pts.delete(e.pointerId); pd=0; };
-stage.addEventListener("pointerup",endPt); stage.addEventListener("pointercancel",endPt);
+function settleFit(force){ setTimeout(()=>fit(force),700); setTimeout(()=>fit(force),1700); }
+function focusOn(n){
+  const k = Math.max(T.k, .95);
+  svg.transition().duration(1000).ease(d3.easeCubicInOut).call(zoom.transform, d3.zoomIdentity.translate(W/2-n.x*k, H/2-n.y*k).scale(k));
+}
+document.getElementById("bExpand").onclick = expandAll;
+document.getElementById("bReset").onclick  = reset;
+document.getElementById("bFit").onclick    = ()=>fit(true);
+document.getElementById("bIn").onclick     = ()=>svg.transition().duration(300).call(zoom.scaleBy,1.35);
+document.getElementById("bOut").onclick    = ()=>svg.transition().duration(300).call(zoom.scaleBy,1/1.35);
+addEventListener("resize", ()=>{ W=innerWidth; H=innerHeight; });
 
-bExpand.onclick = expandAll; bReset.onclick = reset;
-bFit.onclick = ()=>fitTo(visibleNodes());
-bIn.onclick  = ()=>zoomAt(1.25, innerWidth/2, innerHeight/2);
-bOut.onclick = ()=>zoomAt(1/1.25, innerWidth/2, innerHeight/2);
-addEventListener("resize", ()=>fitTo(visibleNodes()));
-
-/* ---------- Arte generativo de fondo: nebulosas + hilos de luz + polvo estelar ---------- */
-const cv = document.getElementById("art"), g = cv.getContext("2d");
-let W=0,H=0,dust=[],blobs=[],DPR=Math.min(devicePixelRatio||1,2);
-function sizeArt(){
-  W=innerWidth; H=innerHeight; cv.width=W*DPR; cv.height=H*DPR; g.setTransform(DPR,0,0,DPR,0,0);
-  dust=Array.from({length:Math.round(W*H/9000)},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.2,p:Math.random()*6.28,s:Math.random()*.0012+.0004,z:Math.random()*.6+.2}));
+/* ---------- Buscador ---------- */
+const q = document.getElementById("q"), res = document.getElementById("res");
+let hits=[], act=-1;
+function reveal(n){
+  const chain=[]; for(let p=n.parent;p;p=p.parent) chain.unshift(p);
+  chain.forEach(p=>{ if(!p.open) expand(p); });
+  hint.classList.add("hide"); render(); pinned=n; showCard(n);
+  setTimeout(()=>{ focusOn(n); bump(n); }, 900);
 }
-blobs=[ {c:css("--p1"),ax:.28,ay:.72,fx:.00011,fy:.00009,r:.55}, {c:css("--p3"),ax:.2,ay:.25,fx:.00008,fy:.00012,r:.5},
-        {c:css("--p2"),ax:.82,ay:.3,fx:.0001,fy:.00007,r:.4}, {c:css("--root"),ax:.6,ay:.8,fx:.00007,fy:.00011,r:.42} ];
-const rgba=(hex,a)=>{ const n=parseInt(hex.slice(1),16); return `rgba(${n>>16},${n>>8&255},${n&255},${a})`; };
-function frame(t){
-  g.globalCompositeOperation="source-over"; g.fillStyle="#000"; g.fillRect(0,0,W,H);
-  g.globalCompositeOperation="lighter";
-  const ox=cam.x*.03, oy=cam.y*.03;
-  blobs.forEach((b,i)=>{
-    const x=W*(b.ax+.14*Math.sin(t*b.fx*6+i*2))+ox, y=H*(b.ay+.14*Math.cos(t*b.fy*6+i))+oy, r=Math.max(W,H)*b.r;
-    const gr=g.createRadialGradient(x,y,0,x,y,r); gr.addColorStop(0,rgba(b.c,.14)); gr.addColorStop(.5,rgba(b.c,.045)); gr.addColorStop(1,rgba(b.c,0));
-    g.fillStyle=gr; g.fillRect(0,0,W,H);
-  });
-  // hilos de luz (curvas de flujo)
-  g.lineWidth=1;
-  for(let i=0;i<9;i++){
-    const col=blobs[i%4].c, ph=t*.00018+i*1.3;
-    g.strokeStyle=rgba(col,.07); g.beginPath();
-    for(let x=-20;x<=W+20;x+=24){
-      const y=H*(.12+i*.1)+Math.sin(x*.004+ph*3+i)*H*.07+Math.sin(x*.011-ph*2)*H*.025+oy*(.4+i*.05);
-      x===-20?g.moveTo(x,y):g.lineTo(x,y);
-    }
-    g.stroke();
-  }
-  // polvo estelar
-  dust.forEach(d=>{
-    const a=.2+.7*Math.abs(Math.sin(d.p+t*d.s*6));
-    const x=((d.x+ox*d.z*3)%W+W)%W, y=((d.y+oy*d.z*3)%H+H)%H;
-    g.globalAlpha=a*d.z; g.fillStyle="#fff"; g.beginPath(); g.arc(x,y,d.r,0,6.283); g.fill();
-  });
-  g.globalAlpha=1;
-  requestAnimationFrame(frame);
+function runSearch(){
+  const t = norm(q.value.trim()); hits = t ? all.filter(n=>n.depth>0 && norm(n.t).includes(t)).slice(0,7) : [];
+  res.innerHTML=""; act=-1;
+  hits.forEach((n,i)=>{ const d=document.createElement("div"); d.style.setProperty("--c",n.color); d.textContent=n.t;
+    d.onmousedown=e=>{ e.preventDefault(); pick(n); }; res.appendChild(d); });
+  res.classList.toggle("show", hits.length>0);
 }
-sizeArt(); addEventListener("resize",sizeArt); requestAnimationFrame(frame);
+function pick(n){ q.value=""; res.classList.remove("show"); q.blur(); reveal(n); }
+q.addEventListener("input", runSearch);
+q.addEventListener("keydown", e=>{
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){ e.preventDefault(); act=(act+(e.key==="ArrowDown"?1:-1)+hits.length)%hits.length; [...res.children].forEach((c,i)=>c.classList.toggle("act",i===act)); }
+  else if(e.key==="Enter" && hits.length){ pick(hits[Math.max(0,act)]); }
+  else if(e.key==="Escape"){ q.value=""; runSearch(); q.blur(); }
+});
+q.addEventListener("blur", ()=>setTimeout(()=>res.classList.remove("show"),150));
 
 /* ---------- Inicio: solo la esfera central ---------- */
-show(DATA); DATA.el.classList.add("on");
-cam = {x:innerWidth/2, y:innerHeight/2 - 30, k:1}; apply(false);
+DATA.x=0; DATA.y=0; DATA.fx=0; DATA.fy=0; DATA.vis=true;
+svg.call(zoom.transform, d3.zoomIdentity.translate(W/2,H/2-20));
+render();
 if (location.hash === "#todo") expandAll();
 </script>
 </body>
