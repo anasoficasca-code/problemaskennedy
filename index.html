@@ -267,6 +267,34 @@
   #ghost circle{animation:gtw 3.6s ease-in-out infinite}
   @keyframes gtw{50%{opacity:.35}}
 
+  /* página limpia: sin panel de contexto, sin módulo derecho, sin leyenda, minimapa ni botones de zoom */
+  #ctx,#bCtx,#mCtx,#insp,#mini,#zoom,#legend{display:none!important}
+  /* panel pequeño de evolución histórica, pegado sobre la tarjeta de Higiene estatal */
+  #hp{position:fixed;z-index:60;width:340px;max-width:calc(100vw - 24px);padding:12px 12px 10px;background:rgba(10,10,10,.97);border:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);border-radius:16px;
+    box-shadow:0 18px 50px -12px rgba(0,0,0,.85);opacity:0;transform:translateY(10px) scale(.95);pointer-events:none;transition:opacity .35s,transform .5s cubic-bezier(.2,1.25,.3,1);user-select:text;-webkit-user-select:text}
+  #hp.show{opacity:1;transform:none;pointer-events:auto}
+  #hp::after{content:"";position:absolute;left:calc(var(--ax,50%) - 7px);bottom:-8px;width:14px;height:14px;background:#0a0a0a;border-right:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);border-bottom:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);transform:rotate(45deg)}
+  #hp.below::after{bottom:auto;top:-8px;border:0;border-left:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);border-top:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000)}
+  .hh{display:flex;align-items:center;gap:9px}
+  .hi{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--c);color:var(--ink,#0a0a0a)}.hi svg{width:17px;height:17px}
+  .hh b{display:block;font:700 13px var(--sans)}.hh span{font:400 9.5px var(--mono);letter-spacing:1px;color:var(--mut);text-transform:uppercase}
+  .hx{margin-left:auto;width:28px;height:28px;border-radius:8px;border:0;background:none;color:var(--mut);cursor:pointer;display:grid;place-items:center}.hx:hover{background:#171717;color:#fff}.hx svg{width:15px;height:15px}
+  .htl{display:flex;align-items:center;gap:6px;margin:12px 2px 10px}
+  .hd{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 10px;border-radius:12px;border:1px solid var(--line2);background:#0c0c0c;color:#aaa;cursor:pointer;transition:all .25s;min-width:92px}
+  .hd b{font:600 15px var(--mono)}.hd small{font:400 10px var(--sans)}
+  .hd.on{background:var(--c);border-color:var(--c);color:var(--ink,#0a0a0a);transform:translateY(-2px);box-shadow:0 8px 20px -8px var(--c)}
+  .hln{flex:1;height:2px;background:linear-gradient(90deg,var(--c),var(--line2));position:relative;border-radius:2px}
+  .hln em{position:absolute;left:50%;top:-18px;transform:translateX(-50%);font:500 9.5px var(--mono);color:var(--mut);font-style:normal;white-space:nowrap}
+  .hb{animation:hswap .5s cubic-bezier(.2,.9,.3,1)}
+  @keyframes hswap{from{opacity:0;transform:translateX(14px)}}
+  .hd1{font:600 12.5px var(--sans);color:#fff;margin:2px 2px 6px}.hd1 small{display:block;font:400 10px var(--mono);color:var(--mut);letter-spacing:.6px;margin-bottom:3px;text-transform:uppercase}
+  .hnote{font:400 11.5px/1.4 var(--sans);color:#cfcfcf;margin:0 2px 8px}
+  .hc{display:flex;align-items:flex-start;gap:9px;padding:6px 4px}
+  .hci{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 14%,#000);border:1px solid color-mix(in srgb,var(--c) 40%,#000)}.hci svg{width:15px;height:15px}
+  .hc b{display:block;font:600 12.5px var(--mono);color:#fff;margin-bottom:1px}.hc p{font:400 11.5px/1.35 var(--sans);color:#bdbdbd}
+  .hl{display:flex;align-items:center;gap:6px;margin:6px 2px 0;padding-top:8px;border-top:1px solid var(--line);font:500 11px var(--sans);color:#aaa;text-decoration:none}.hl:hover{color:#fff}.hl svg{width:13px;height:13px}
+  @media (max-width:900px){ #hp{left:8px!important;right:8px;top:auto!important;bottom:calc(78px + env(safe-area-inset-bottom));width:auto;max-width:none} #hp::after{display:none} }
+
   /* =========================== MÓVIL =========================== */
   #mob{display:none}
   @media (max-width:900px){
@@ -389,7 +417,7 @@
 </div>
 
 <div id="cur"></div><div id="cur2"></div>
-<div id="hist"><div class="hbar"><div class="hti">TITLE</div><a class="btn" id="hOpen" target="_blank" rel="noopener">OPEN</a><button class="btn pri" id="hClose">CLOSE</button></div><iframe id="hframe" title="Evolución histórica del territorio" allow="fullscreen"></iframe></div>
+<div id="hp"></div>
 <script src="lib/d3.min.js"></script>
 <script src="lib/lucide.min.js"></script>
 <script>
@@ -581,7 +609,7 @@ all.forEach(n=>{
   e.innerHTML=`<div class="glare"></div><div class="wm">${icon(n.i,1.2)}</div><div class="tile">${icon(n.i)}</div><div class="txt"><span class="id">${n.depth===0?"FENÓMENO CENTRAL":"VAR "+n.code}${xb}${n.key==="hig"?`<span class="xb" title="Abre la evolución histórica">${icon("History",2.2)}historia</span>`:""}</span><span class="lb">${n.depth===0?n.t:n.s}</span></div>${n.kids.length?`<div class="cnt"><span>${n.kids.length}</span>${icon("ChevronRight",2.4)}</div>`:""}`;
   e.title=n.t; n.el=e; world.appendChild(e);
   if(n.depth===0) e.classList.add("on");
-  e.addEventListener("click",ev=>{ ev.stopPropagation(); if(moved) return; ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig") setTimeout(openHist,1100); });
+  e.addEventListener("click",ev=>{ ev.stopPropagation(); if(moved) return; if(n.key!=="hig") closeHist(); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig"){ if(hpOpen) closeHist(); else setTimeout(openHist,550); } });
   e.addEventListener("mouseenter",()=>focusLine(n)); e.addEventListener("mouseleave",()=>focusLine(null));
   e.addEventListener("mousemove",ev=>{ const r=e.getBoundingClientRect(); e.style.setProperty("--mx",((ev.clientX-r.left)/T.k)+"px"); e.style.setProperty("--my",((ev.clientY-r.top)/T.k)+"px"); });
   if(n.parent){
@@ -676,7 +704,7 @@ function renderInsp(){
 function select(n){ sel=n; all.forEach(m=>{ m.el.classList.toggle("sel",m===n); m.mel.classList.toggle("sel",m===n); }); clearRelTags(); renderInsp(); applySelFocus(); }
 function closeInsp(){ $("#insp").classList.remove("show"); }
 $("#iClose").onclick=()=>{ sel=null; all.forEach(m=>{ m.el.classList.remove("sel"); m.mel.classList.remove("sel"); }); closeInsp(); clearRelTags(); applySelFocus(); };
-stage.addEventListener("click",()=>{ if(!moved){ $("#iClose").onclick(); } });
+stage.addEventListener("click",()=>{ if(!moved){ $("#iClose").onclick(); closeHist(); } });
 function openSheet(n){ $("#sheet").innerHTML=inspHTML(n); bindAct($("#sheet")); $("#sheet").classList.add("show"); $("#sheetbg").classList.add("show"); }
 function closeSheet(){ $("#sheet").classList.remove("show"); $("#sheetbg").classList.remove("show"); }
 $("#sheetbg").onclick=closeSheet;
@@ -729,14 +757,46 @@ function propagate(start){
 function runProp(n){ const start=n||sel||DATA; if(!DATA.open){ DATA.open=true; hideHints(); refresh(DATA); if(!isMobile()) reveal([DATA,...DATA.kids]); setTimeout(()=>propagate(DATA),950); } else propagate(start); }
 $("#bProp").onclick=()=>runProp();
 
-/* ============ Evolución histórica (página del proyecto, incrustada) ============ */
+/* ============ Evolución histórica: panel pequeño sobre Higiene estatal (solo 1900 y 1972) ============ */
 const HURL="https://anasoficasca-code.github.io/humedalburro/problematicas.html";
-$(".hti").innerHTML=`<i>${icon("History",2)}</i><div><b>Evolución histórica del territorio</b><span>Humedal El Burro · página del proyecto</span></div>`;
-$("#hOpen").innerHTML=icon("ExternalLink",2)+"Abrir aparte"; $("#hOpen").href=HURL; $("#hClose").innerHTML=icon("X",2)+"Volver al mapa";
-$("#hist").style.setProperty("--hc",P.c1);
-function openHist(){ const f=$("#hframe"); if(!f.dataset.l){ f.src=HURL; f.dataset.l="1"; } $("#hist").classList.add("show"); document.body.classList.add("hist-open"); }
-function closeHist(){ $("#hist").classList.remove("show"); document.body.classList.remove("hist-open"); }
-$("#hClose").onclick=closeHist; addEventListener("keydown",e=>{ if(e.key==="Escape") closeHist(); });
+const ERA={
+  1900:{ nombre:"Antes de Kennedy", fecha:"1900", sub:"La laguna El Tintal (chucua, el humedal)", chips:[
+    ["Droplet","El Tintal","Una sola laguna antes del aeropuerto (en los años 30 se fraccionó en cinco humedales, entre ellos La Vaca)"],
+    ["Wheat","≈750","Ganado vacuno en pastoreo sobre las zonas verdes, por fuera del agua"],
+    ["Trees","","Más árboles: franjas de ribera ampliadas, bosquetes y sabana abierta"]] },
+  1972:{ nombre:"Corabastos", fecha:"20 de julio de 1972", sub:"Se inaugura Corabastos", nota:"La central de abastos, de unos 420.000 m², dinamiza el poblamiento de Patio Bonito y de barrios vecinos.", chips:[
+    ["ShoppingBasket","420.000 m²","Perímetro esquemático del predio de Corabastos, inaugurado en 1972"],
+    ["Droplet","La Vaca ampliada","Se muestran los dos sectores cartografiados del Humedal La Vaca, incluido el ámbito que llega hasta Corabastos"],
+    ["Home","1 piso","Solo edificios de un piso, sin edificios sobre el humedal"],
+    ["Route","","Calles reales; todavía sin avenidas principales"]] }
+};
+let hpOpen=false, hpYear=1900;
+function hpRender(){
+  const hp=$("#hp"), n=KK.hig, e=ERA[hpYear];
+  hp.style.setProperty("--c",n.color); hp.style.setProperty("--ink",ink(n.color));
+  hp.innerHTML=`<div class="hh"><i class="hi">${icon("History",2)}</i><div><b>Evolución histórica</b><span>Del territorio al mercado mayorista</span></div><button class="hx" aria-label="Cerrar">${icon("X",2.2)}</button></div>
+   <div class="htl"><button class="hd${hpYear===1900?" on":""}" data-y="1900"><b>1900</b><small>${ERA[1900].nombre}</small></button><span class="hln"><em>72 años</em></span><button class="hd${hpYear===1972?" on":""}" data-y="1972"><b>1972</b><small>${ERA[1972].nombre}</small></button></div>
+   <div class="hb"><div class="hd1"><small>${e.fecha}</small>${e.sub}</div>${e.nota?`<p class="hnote">${e.nota}</p>`:""}
+   ${e.chips.map(c=>`<div class="hc"><span class="hci">${icon(c[0],2)}</span><div>${c[1]?`<b>${c[1]}</b>`:""}<p>${c[2]}</p></div></div>`).join("")}</div>
+   <a class="hl" href="${HURL}" target="_blank" rel="noopener">${icon("ExternalLink",2)}Ver la página completa de evolución histórica</a>`;
+  hp.querySelector(".hx").onclick=closeHist; hp.querySelectorAll(".hd").forEach(b=>b.onclick=()=>{ hpYear=+b.dataset.y; hpRender(); placeHP(); });
+}
+function placeHP(){
+  if(!hpOpen||isMobile()) return; const hp=$("#hp"), r=KK.hig.el.getBoundingClientRect(), pw=Math.min(340,innerWidth-24), ph=hp.offsetHeight||300;
+  let left=r.left+r.width/2-pw/2; left=Math.max(12,Math.min(innerWidth-pw-12,left));
+  let top=r.top-ph-18, below=false; if(top<64){ top=r.bottom+18; below=true; }
+  hp.style.left=left+"px"; hp.style.top=top+"px"; hp.classList.toggle("below",below); hp.style.setProperty("--ax",Math.max(24,Math.min(pw-24,r.left+r.width/2-left))+"px");
+}
+function openHist(){
+  hpOpen=true; hpYear=1900; hpRender(); $("#hp").classList.add("show");
+  if(!isMobile()){ // baja el mapa lo justo para que el panel quede ARRIBA de la tarjeta y no tape las demás
+    const ph=$("#hp").offsetHeight||330, r=KK.hig.el.getBoundingClientRect(), need=ph+96-r.top;
+    if(need>0) goto(d3.zoomIdentity.translate(T.x,T.y+need).scale(T.k),900);
+  }
+  placeHP(); requestAnimationFrame(placeHP);
+}
+function closeHist(){ hpOpen=false; $("#hp").classList.remove("show"); }
+addEventListener("keydown",e=>{ if(e.key==="Escape") closeHist(); });
 
 /* ============ Contexto (narrativa de la exposición) ============ */
 const lk=(k,t)=>`<a data-k="${k}" style="--c:${KK[k].color}">${t}</a>`;
@@ -767,7 +827,7 @@ document.addEventListener("click",e=>{ if(!e.target.closest("#palpop")) $("#palp
 const DUR=900; let W=innerWidth, H=innerHeight, T=d3.zoomIdentity, moved=false, startT=T;
 const zoom=d3.zoom().scaleExtent([.12,2.5]).clickDistance(5)
   .on("start",()=>{ moved=false; })
-  .on("zoom",e=>{ T=e.transform; world.style.transform=`translate(${T.x}px,${T.y}px) scale(${T.k})`; if(e.sourceEvent&&e.sourceEvent.type!=="wheel"&&Math.hypot(T.x-startT.x,T.y-startT.y)>4){ moved=true; stage.classList.add("drag"); } updateVP(); })
+  .on("zoom",e=>{ T=e.transform; world.style.transform=`translate(${T.x}px,${T.y}px) scale(${T.k})`; if(e.sourceEvent&&e.sourceEvent.type!=="wheel"&&Math.hypot(T.x-startT.x,T.y-startT.y)>4){ moved=true; stage.classList.add("drag"); } updateVP(); placeHP(); })
   .on("end",()=>{ stage.classList.remove("drag"); setTimeout(()=>moved=false,0); });
 d3.select(stage).call(zoom).on("dblclick.zoom",null).on("pointerdown.t",()=>{ startT=T; });
 const sSel=()=>d3.select(stage);
@@ -777,7 +837,7 @@ const rootT=()=>{ const b=bbox(all), pad={l:padL(),r:60,t:100,b:90}, k=Math.min(
 function home(){ goto(rootT()); }
 function bbox(ns){ let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; ns.forEach(n=>{ x0=Math.min(x0,n.x); x1=Math.max(x1,n.x+n.w); y0=Math.min(y0,n.y-n.h/2); y1=Math.max(y1,n.y+n.h/2); }); return {x0,y0,x1,y1}; }
 const padL=()=>$("#ctx").classList.contains("show")&&W>900?350:70;
-const padR=()=>$("#insp").classList.contains("show")&&W>900?(W>1180?300:270):70;
+const padR=()=>70;
 function fit(ns){ const v=ns||all.filter(n=>n.vis), b=bbox(v), pad={l:padL(),r:padR(),t:110,b:100};
   const k=Math.min((W-pad.l-pad.r)/(b.x1-b.x0+60),(H-pad.t-pad.b)/(b.y1-b.y0+80),1.15);
   goto(d3.zoomIdentity.translate(pad.l+(W-pad.l-pad.r-(b.x1-b.x0)*k)/2-b.x0*k,pad.t+(H-pad.t-pad.b-(b.y1-b.y0)*k)/2-b.y0*k).scale(k)); }
@@ -874,7 +934,7 @@ if(matchMedia("(pointer:fine)").matches){
   edges.forEach(e=>{ const a=KK[e.a.key], b=KK[e.b.key]; s+=`<line x1="${a.x+a.w/2}" y1="${a.y}" x2="${b.x+b.w/2}" y2="${b.y}"/>`; });
   all.forEach((n,i)=>{ if(n.depth===0) return; s+=`<circle cx="${n.x+n.w/2}" cy="${n.y}" r="${n.depth===1?16:9}" fill="${n.color}" opacity=".85" style="animation-delay:${(-i*.37).toFixed(2)}s"/>`; });
   g.innerHTML=s; world.insertBefore(g,LK); })();
-if(!isMobile()&&!location.hash){ $("#ctx").classList.add("show"); }
+
 d3.select(stage).call(zoom.transform,rootT());
 refresh(null); updateVP();
 const hs=location.hash;
