@@ -228,14 +228,14 @@
   #ctx .note,.ctxp .note{font:400 11.5px var(--sans);color:var(--mut);border-top:1px solid var(--line);padding-top:12px;margin-top:6px;display:flex;gap:8px;align-items:center}
   #ctx .note svg,.ctxp .note svg{flex:none;width:14px;height:14px}
 
-  @media (max-width:1180px) and (min-width:761px){
+  @media (max-width:1180px) and (min-width:901px){
     #brand p{display:none} .search{width:200px} #mini{display:none} #zoom{bottom:20px} #legend{width:auto;padding:8px} #legend .li span,#legend h4,#legend .key,#legend b,#stat{display:none}
     #insp{width:290px} #ctx{width:320px}
   }
 
   /* =========================== MÓVIL =========================== */
   #mob{display:none}
-  @media (max-width:760px){
+  @media (max-width:900px){
     #desk{display:none}
     html,body{overflow:auto;height:auto;min-height:100%}
     body{overflow-x:hidden;user-select:auto;-webkit-user-select:auto}
@@ -286,6 +286,10 @@
   .mcnt svg{width:14px;height:14px;transition:transform .25s}
   .mn.open>.mc .mcnt svg{transform:rotate(90deg)}
   .mn.open>.mc .mcnt{color:var(--c);border-color:color-mix(in srgb,var(--c) 55%,#000)}
+  .xchips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .xchip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px 4px 8px;border-radius:12px;border:1px solid color-mix(in srgb,var(--c) 55%,#000);background:color-mix(in srgb,var(--c) 12%,#000);color:#e2e2e2;font:500 11.5px/1.2 var(--sans);cursor:pointer}
+  .xchip b{font:600 13px var(--mono);color:var(--c)}
+  .md1>.mc .xchip{background:rgba(0,0,0,.22);border-color:rgba(0,0,0,.4);color:var(--ink)}.md1>.mc .xchip b{color:var(--ink)}
   .mi{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--line2);background:#0a0a0a;color:var(--mut);display:grid;place-items:center;cursor:pointer}
   .mi svg{width:16px;height:16px}
   .md1>.mc{background:var(--c);border-color:var(--c);min-height:84px;color:var(--ink)}
@@ -310,7 +314,7 @@
   #sheet.show{transform:none}
   #sheet::before{content:"";display:block;width:42px;height:4px;border-radius:2px;background:#333;margin:-10px auto 16px}
   #sheet .btn{height:46px;border-radius:13px}
-  @media (min-width:761px){ #sheet,#sheetbg{display:none} }
+  @media (min-width:901px){ #sheet,#sheetbg{display:none} }
 </style>
 </head>
 <body>
@@ -431,7 +435,7 @@ function icon(name, sw=1.7){
 }
 const ink = c => { const n=parseInt(c.slice(1),16), l=(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255; return l>.58?"#0a0a0a":"#ffffff"; };
 const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
-const isMobile = () => matchMedia("(max-width:760px)").matches;
+const isMobile = () => matchMedia("(max-width:900px)").matches;
 
 /* ============ red real → jerarquía (árbol) + enlaces entre ramas ============ */
 const gn = ND.map((d,i)=>({ id:i, key:d[0], t:d[1], s:d[2]||d[1], i:d[3], g:d[4], nei:[], inn:[], out:[], und:[], groups:[d[4]] }));
@@ -587,10 +591,13 @@ function focusLine(n){
       d.addEventListener("click",()=>{ select(n); toggle(n); }); n.mel=d; list.appendChild(d); n.kids.forEach(k=>list.appendChild(mkm(k))); return d;
     }
     d.className=`mn md${Math.min(n.depth,2)}${n.bridge?" bridge":""}`;
-    d.innerHTML=`<div class="mc"><div class="mt">${icon(n.i)}</div><div class="mx"><span class="mid">VAR ${n.code}${xb}</span><span class="ml">${n.t}</span></div><div class="mr">${n.kids.length?`<span class="mcnt"><span>${n.kids.length}</span>${icon("ChevronRight",2.4)}</span>`:""}<button class="mi" aria-label="Detalles">${icon("Info",2)}</button></div></div>${n.kids.length?`<div class="mk"><div class="mki"></div></div>`:""}`;
+    // conexiones con otras ramas, escritas con su sentido: → este nodo causa, ← este nodo recibe, — sin dirección
+    const xch=n.xs.length?`<div class="xchips">${n.xs.map(x=>{ const o=x.s===n?x.t:x.s, sym=!x.dir?"—":(x.s===n?"→":"←"); return `<span class="xchip" data-k="${o.key}" style="--c:${o.color}"><b>${sym}</b>${o.s}</span>`; }).join("")}</div>`:"";
+    d.innerHTML=`<div class="mc"><div class="mt">${icon(n.i)}</div><div class="mx"><span class="mid">VAR ${n.code}${xb}</span><span class="ml">${n.t}</span>${xch}</div><div class="mr">${n.kids.length?`<span class="mcnt"><span>${n.kids.length}</span>${icon("ChevronRight",2.4)}</span>`:""}<button class="mi" aria-label="Detalles">${icon("Info",2)}</button></div></div>${n.kids.length?`<div class="mk"><div class="mki"></div></div>`:""}`;
     n.mel=d;
     d.querySelector(".mc").addEventListener("click",()=>{ select(n); if(n.kids.length) toggle(n); else openSheet(n); });
     d.querySelector(".mi").addEventListener("click",ev=>{ ev.stopPropagation(); select(n); openSheet(n); });
+    d.querySelectorAll(".xchip").forEach(c=>c.addEventListener("click",ev=>{ ev.stopPropagation(); goNode(KK[c.dataset.k]); }));
     if(n.kids.length){ const box=d.querySelector(".mki"); n.kids.forEach(k=>box.appendChild(mkm(k))); }
     return d;
   };
