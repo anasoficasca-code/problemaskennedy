@@ -273,6 +273,41 @@
 
   /* página limpia: sin panel de contexto, sin módulo derecho, sin leyenda, minimapa ni botones de zoom */
   #ctx,#bCtx,#mCtx,#insp,#mini,#zoom,#legend{display:none!important}
+  /* Relato: narración guiada (escritorio: columna izquierda · móvil: hoja inferior) */
+  #nar{position:fixed;z-index:58;left:16px;top:70px;width:340px;max-height:calc(100vh - 92px);display:flex;flex-direction:column;background:rgba(8,8,8,.97);border:1px solid var(--line2);border-radius:16px;
+    box-shadow:0 18px 50px -12px rgba(0,0,0,.85);opacity:0;transform:translateX(-14px);pointer-events:none;transition:opacity .35s,transform .45s cubic-bezier(.2,1,.3,1);user-select:text;-webkit-user-select:text}
+  #nar.show{opacity:1;transform:none;pointer-events:auto}
+  #nar .nbar{height:3px;background:var(--line);border-radius:16px 16px 0 0;overflow:hidden;flex:none}
+  #nar .nbar i{display:block;height:100%;width:0;background:var(--c,#f4f4f4)}
+  #nar .nbar i.run{animation:narp var(--d,20s) linear forwards}
+  #nar .nbar i.stop{animation-play-state:paused}
+  @keyframes narp{to{width:100%}}
+  #nar .nh{display:flex;align-items:center;gap:12px;padding:16px 16px 0}
+  #nar .nh i{flex:none;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--c,#f4f4f4);color:var(--ink,#000)}#nar .nh i svg{width:23px;height:23px}
+  #nar .ns{display:block;font:500 10px var(--mono);letter-spacing:1.4px;color:var(--mut);text-transform:uppercase;margin-bottom:3px}
+  #nar .nh b{font:700 16px/1.2 var(--sans)}
+  #nar .nx{margin-left:auto;align-self:flex-start;width:30px;height:30px;border-radius:9px;border:1px solid var(--line2);background:#0a0a0a;color:var(--fg);cursor:pointer;display:grid;place-items:center}#nar .nx svg{width:15px;height:15px}
+  #nar .nb{overflow:auto;padding:12px 16px 4px;min-height:0}
+  #nar p{font:400 13.5px/1.62 var(--sans);color:#d8d8d8}
+  #nar .nchips{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+  #nar .nchips div{display:flex;gap:9px;align-items:flex-start;font:400 12.5px/1.4 var(--sans);color:#cfcfcf;padding:8px 10px;border:1px solid var(--line2);border-left:3px solid var(--c,#fff);border-radius:9px;background:#0d0d0d}
+  #nar .nchips b{font:600 11px var(--mono);color:var(--c,#fff);flex:none;padding-top:1px}
+  #nar .nind{margin-top:12px;padding:10px 12px;border:1px solid var(--line2);border-radius:11px;background:#0d0d0d}
+  #nar .nind h6{display:flex;align-items:center;gap:7px;font:500 10px var(--mono);letter-spacing:1.2px;color:var(--mut);text-transform:uppercase;margin-bottom:6px}#nar .nind h6 svg{width:13px;height:13px}
+  #nar .nind strong{display:block;font:600 13px/1.3 var(--sans);color:#fff;margin-bottom:6px}
+  #nar .nind span{display:inline-block;margin:0 5px 5px 0;padding:3px 8px;border-radius:20px;border:1px solid var(--line2);font:400 11px var(--sans);color:#bdbdbd}
+  #nar .nv{display:inline-flex;gap:6px;align-items:center;margin:12px 0 0;height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--line2);background:#111;color:var(--fg);font:500 12px var(--sans);cursor:pointer}#nar .nv svg{width:14px;height:14px}
+  #nar .nf{display:flex;align-items:center;gap:8px;padding:12px 16px 8px;flex:none}
+  #nar .nf .btn{height:36px;padding:0 12px}
+  #nar .nf .sp{flex:1}
+  #nar .ndots{display:flex;gap:4px;padding:0 16px 14px;flex:none}
+  #nar .ndots button{flex:1;height:6px;border:0;border-radius:3px;background:var(--line2);cursor:pointer;padding:0}
+  #nar .ndots button.on{background:var(--c,#fff)}#nar .ndots button.cur{background:var(--c,#fff);box-shadow:0 0 0 2px #000,0 0 0 3px var(--c,#fff)}
+  @media (max-width:900px){
+    #nar{left:8px;right:8px;top:auto;width:auto;bottom:calc(74px + env(safe-area-inset-bottom));max-height:46vh;transform:translateY(14px)}
+    #nar.show{transform:none}
+    #nar p{font-size:13px}
+  }
   /* panel pequeño de evolución histórica, pegado sobre la tarjeta de Higiene estatal */
   #hp{position:fixed;z-index:60;width:min(900px,calc(100vw - 40px));max-width:calc(100vw - 24px);padding:12px 12px 10px;background:rgba(10,10,10,.97);border:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);border-radius:16px;
     box-shadow:0 18px 50px -12px rgba(0,0,0,.85);opacity:0;transform:translateY(10px) scale(.95);pointer-events:none;transition:opacity .35s,transform .5s cubic-bezier(.2,1.25,.3,1);user-select:text;-webkit-user-select:text}
@@ -432,7 +467,8 @@
     <div class="search" id="dsearch"></div>
     <button class="btn" id="bPal" aria-label="Paleta de colores"></button>
     <button class="btn" id="bCtx"></button>
-    <button class="btn pri" id="bProp"></button>
+    <button class="btn pri" id="bNar"></button>
+    <button class="btn" id="bProp"></button>
     <button class="btn" id="bAll"></button>
     <button class="btn" id="bReset"></button>
   </div>
@@ -443,13 +479,14 @@
   <div id="insp"><button id="iClose" aria-label="Cerrar"></button><div id="ibody"></div></div>
   <div id="ctx"><button id="cClose" aria-label="Cerrar"></button><div id="cbody"></div></div>
 </div>
+<div id="nar" role="dialog" aria-label="Relato guiado"></div>
 <div id="palpop"></div>
 
 <!-- ======================= MÓVIL ======================= -->
 <div id="mob">
   <div id="mh">
     <div class="row"><div class="logo" id="mlogo"></div><div><h1>Problemáticas de Kennedy</h1><p>Modelamiento dinámico</p></div>
-      <div class="sp"><button class="btn" id="mPal" aria-label="Paleta"></button><button class="btn" id="mS" aria-label="Buscar"></button><button class="btn pri" id="mP" aria-label="Propagar"></button></div></div>
+      <div class="sp"><button class="btn" id="mPal" aria-label="Paleta"></button><button class="btn" id="mS" aria-label="Buscar"></button><button class="btn pri" id="mP" aria-label="Relato"></button></div></div>
     <div id="msw"><div class="search" id="msearch"></div></div>
     <div id="chips"></div>
   </div>
@@ -587,7 +624,7 @@ all.forEach(n=>{ n.xs=xedges.filter(x=>x.s===n||x.t===n); });
 /* ============ iconos de la interfaz ============ */
 const sch=(id,rid)=>icon("Search",2)+`<input id="${id}" placeholder="Buscar variable…" autocomplete="off"><div class="res" id="${rid}"></div>`;
 $("#logo").innerHTML=icon("Network",1.9); $("#mlogo").innerHTML=icon("Network",1.9);
-$("#bProp").innerHTML=icon("Play",2)+"Propagar"; $("#bAll").innerHTML=icon("ListTree",2)+"Expandir todo"; $("#bReset").innerHTML=icon("RotateCcw",2)+"Reiniciar";
+$("#bNar").innerHTML=icon("Play",2)+"Relato"; $("#bProp").innerHTML=icon("Route",2)+"Propagar"; $("#bAll").innerHTML=icon("ListTree",2)+"Expandir todo"; $("#bReset").innerHTML=icon("RotateCcw",2)+"Reiniciar";
 $("#bIn").innerHTML=icon("Plus",2.2); $("#bOut").innerHTML=icon("Minus",2.2); $("#bFit").innerHTML=icon("Maximize",2);
 $("#iClose").innerHTML=icon("X",2); $("#cClose").innerHTML=icon("X",2);
 $("#hint").innerHTML=icon("MousePointerClick",2)+"Haz clic en la Fragmentación Territorial para ver la red";
@@ -719,7 +756,7 @@ function focusLine(n){
   $("#chips").querySelectorAll(".chipb").forEach(c=>c.addEventListener("click",()=>{ const b=all[+c.dataset.i]; DATA.open=true; b.open=true; hideHints(); refresh(b); setTimeout(()=>b.mel.scrollIntoView({block:"start",behavior:"smooth"}),120); }));
 })();
 $("#mS").onclick=()=>{ $("#msw").classList.toggle("show"); if($("#msw").classList.contains("show")) $("#mq").focus(); };
-$("#mAll").onclick=expandAll; $("#mReset").onclick=reset; $("#mP").onclick=()=>runProp();
+$("#mAll").onclick=expandAll; $("#mReset").onclick=reset; $("#mP").onclick=()=>narStart();
 
 /* ============ Inspector (escritorio) y hoja (móvil) ============ */
 function relRow(o){ const m=KK[o.n.key]; return `<div class="rel${m.vis?"":" hid"}" data-k="${m.key}" style="--c:${m.color}"><span class="ri">${icon(m.i)}</span><span>${m.s}</span><small>${m.vis?"":"oculta"}</small></div>`; }
@@ -855,7 +892,7 @@ function placeHP(){
 function inHig(n){ for(let p=n;p;p=p.parent) if(p===KK.hig) return true; return false; }
 function frameHigRow(){ // toda la fila de Higiene estatal (hasta Monoexportación) queda ABAJO y completa
   const n=KK.hig, ds=[n,...descendants(n)], x0=Math.min(...ds.map(d=>d.x)), x1=Math.max(...ds.map(d=>d.x+d.w));
-  const k=Math.max(.3,Math.min((W-90)/(x1-x0),1)), tx=(W-(x1-x0)*k)/2-x0*k, ty=(H-92)-n.y*k;
+  const L=padL(), k=Math.max(.3,Math.min((W-L-30)/(x1-x0),1)), tx=L+(W-L-30-(x1-x0)*k)/2-x0*k, ty=(H-92)-n.y*k;
   goto(d3.zoomIdentity.translate(tx,ty).scale(k),1400);
 }
 function openHist(){
@@ -868,15 +905,58 @@ addEventListener("keydown",e=>{ if(e.key==="Escape") closeHist(); });
 
 /* ============ Contexto (narrativa de la exposición) ============ */
 const lk=(k,t)=>`<a data-k="${k}" style="--c:${KK[k].color}">${t}</a>`;
-const CTX=`<div class="ch"><i>${icon("BookOpen",1.8)}</i><div><h3>El problema en palabras</h3><div class="sub">Textos de la exposición · toca lo subrayado</div></div></div>
- <div class="part"><div class="tag">${icon("Puzzle",2)}Lo que identificamos</div>
- <p>Hemos identificado una problemática territorial crítica: la ${lk("root","fragmentación espacial")}. Este fenómeno no constituye un evento aislado, sino que es el producto acumulado de contradicciones estructurales que operan en el territorio.</p>
- <p>El primer eje de esta problemática es la ${lk("may","hiperconcentración del mercado mayorista")}, cuyos síntomas iniciales se vinculan directamente con los modelos históricos de ${lk("hig","higiene estatal y salubridad pública")}.</p></div>
- <div class="part"><div class="tag">${icon("Route",2)}Por qué falla la planificación</div>
- <p>La falla de fondo del POT es asumir que Corabastos es solo un predio que se puede mover en el mapa, ignorando que funciona como el corazón de un tejido vivo de economía popular que sostiene a Kennedy y a la ciudad.</p>
- <p>Además, la norma fragmenta la localidad en piezas aisladas: dibuja reservas hídricas protegidas, pero al mismo tiempo consolida el ${lk("trans","tráfico de tractomulas")} por la Avenida Ciudad de Cali y la Carrera 80, bordeando los mismos ${lk("eco","ecosistemas")} que promete cuidar.</p>
- <p>Pretender resolver una sobrecarga de escala regional mediante intervenciones físicas locales y desarticuladas es la razón por la que la planificación choca con la realidad del territorio.</p></div>
- <div class="note">${icon("Network",2)}Cada término subrayado te lleva a su variable dentro del mapa.</div>`;
+/* ============ RELATO: el texto de la exposición, paso a paso, dirigiendo el mapa ============
+   show: variables que deben quedar visibles · deep: abre todo el subárbol · foc: encuadre de cámara · sel: variable resaltada
+   prop: arranca la propagación de flechas · panel: animación existente que se abre (plano · hist · pop:clave)
+   chips: ideas del diagrama causal · ind: indicadores territoriales que se citan en ese tramo */
+const STEPS=[
+ { t:"La fragmentación territorial", ic:"Puzzle", g:0, reset:1, sel:"root", foc:["root"],
+   x:"En la localidad de Kennedy hemos identificado una problemática central: la fragmentación territorial. Este fenómeno no es aislado; está profundamente alimentado por varios problemas clave del territorio." },
+ { t:"Hiperconcentración del mercado mayorista", ic:"Store", g:1, show:["may","hig"], sel:"may", foc:["root","may","hig"], prop:"may",
+   x:"Empezando por la hiperconcentración del mercado mayorista, cuyos síntomas visibles son una serie de dinámicas sanitarias y operativas que responden a un modelo histórico de higiene estatal y salubridad pública." },
+ { t:"Dependencia alimentaria", ic:"ShoppingBasket", g:1, show:["dep","trans","perd"], sel:"dep", foc:["may","dep","trans","perd"], prop:"dep", panel:"plano",
+   x:"El diagrama causal de este problema muestra cómo la dependencia de Bogotá del abastecimiento externo, que supera el 99%, concentra masivamente los viajes hacia Corabastos, atrayendo comercio informal, tráfico de carga, congestión vehicular, acumulación de residuos e impermeabilización del suelo." },
+ { t:"1972: nace Corabastos", ic:"History", g:1, deep:["hig"], sel:"hig", panel:"hist", prop:"desc",
+   x:"Para entender el origen de este modelo, debemos devolvernos a 1972, cuando se inaugura la central de Corabastos para responder a las crisis epidémicas provocadas por la descomposición de alimentos en la antigua Plaza España. La falta de tecnología para conservar alimentos obedecía a una infraestructura deficiente por la industrialización tardía del país, cuya causa de fondo fue la monoexportación cafetera: un modelo centrado en el café sin diversificar la producción ni planificar el abastecimiento." },
+ { t:"Por qué Bogotá depende de afuera", ic:"Sprout", g:1, deep:["dep"], sel:"perd", foc:["dep","perd","crec","mod","exp"], prop:"exp", panel:"pop:exp",
+   x:"Adicionalmente, esta concentración se sostiene porque Bogotá mantiene una profunda dependencia alimentaria, derivada de la pérdida de producción agrícola local cuando resultó más rentable transformar la tierra rural en suelo urbano, proceso acelerado por la expulsión violenta de campesinos." },
+ { t:"Concentración comercial y logística", ic:"Gauge", g:1, show:["may","dep","trans"], sel:"may", foc:["may","dep","trans"], prop:"may",
+   x:"Para medir cómo esta concentración satura el entorno, evaluamos los mapas multitemporales de 2020 y 2026 del indicador de Concentración Comercial y Logística. Al comparar ambos periodos, se evidencia una clara expansión y densificación de los núcleos comerciales desde Corabastos hacia los corredores residenciales colindantes.",
+   ind:[{n:"Concentración Comercial y Logística",c:["Intensidad comercial","Impermeabilización del suelo","Emisión térmica infrarroja"],v:"Mapas 2020 y 2026"}] },
+ { t:"Sobrecarga de transporte", ic:"Bus", g:1, deep:["trans"], sel:"trans", foc:["trans","desp","cult","sinc"], prop:"cult", panel:"pop:trans",
+   x:"Todo esto conecta directamente con la sobrecarga de transporte en Kennedy por desplazamientos masivos en franjas horarias específicas. Estos flujos responden a un modelo de sincronización industrial que fijó la jornada a primera hora para aprovechar la luz solar, un hábito cultural que prioriza la presencialidad estricta y el control del tiempo sobre la flexibilidad." },
+ { t:"Clústeres de empleo", ic:"Briefcase", g:1, show:["conc","clust","monoc","econag"], sel:"clust", foc:["trans","conc","clust","monoc","econag"], prop:"monoc", panel:"pop:clust",
+   x:"Sumado a esto, existe una alta concentración espacial de clústeres de empleo debido a la expansión monocéntrica de Bogotá, donde el origen de Kennedy desde Ciudad Techo en 1961 masificó la función residencial en la periferia mientras la oferta laboral se centralizaba. Este fenómeno fue impulsado por economías de aglomeración que concentran empresas para reducir costos, obligando a viajes pendulares que sobrecargan las vías.",
+   ind:[{n:"Presión sobre la Movilidad Vehicular",c:["Emisiones de dióxido de nitrógeno","Densidad de la malla arterial","Accidentalidad"],v:"Evalúa el colapso vial"}] },
+ { t:"Densificación y especulación", ic:"Building2", g:1, show:["dens","esp","esc","plan"], sel:"dens", foc:["conc","dens","esp","esc","plan"], prop:"conc",
+   x:"Asimismo, la densificación en altura y la especulación inmobiliaria concentran la residencia. Finalmente, esto es alimentado por una planificación urbana orientada al mercado y no a la descentralización, donde la infraestructura construida incentiva más clústeres y cierra un ciclo que fragmenta a Kennedy.",
+   ind:[{n:"Conflicto Vivienda-Actividad",c:["Densidad habitacional","× comercio e industria pesada"],v:"Fricción espacial por el mismo espacio público y red de transporte"}] },
+ { t:"Saturación de los residuos", ic:"Trash2", g:2, show:["san","aguasres","cargas","desc"], sel:"res", foc:["res","san","aguasres","cargas","desc"], prop:"desc",
+   x:"Por otro lado, la saturación de residuos desencadena fragmentación territorial. En los andenes, la acumulación de desechos se intensifica por ventas informales y su descomposición colapsa el saneamiento local, incrementando aguas residuales y cargas contaminantes." },
+ { t:"Del desecho al humedal", ic:"Droplets", g:2, show:["san","aguasres","cargas","calagua","eco"], sel:"calagua", foc:["res","san","aguasres","cargas","calagua","eco"], prop:"aguasres",
+   x:"El diagrama causal de este problema sintetiza esta degradación en tres niveles: generación masiva de desechos, colapso de la red de alcantarillado e impacto hídrico por escorrentía, donde los niveles de DBO5, nitrógeno y fósforo superan la capacidad de los humedales.",
+   chips:["Generación masiva de desechos","Colapso de la red de alcantarillado","Impacto hídrico por escorrentía · DBO5, nitrógeno y fósforo"] },
+ { t:"Soporte ecológico", ic:"Globe", g:3, show:["plan","supcons","imperm","frag","perdveg","hab","biodiv"], sel:"eco", foc:["eco","plan","supcons","imperm","frag","perdveg"], prop:"plan",
+   x:"Esto conecta con la degradación del soporte ecológico. Al analizar los mapas multitemporales de 2020 y 2026, observamos la desaparición de corredores ecológicos que conectaban la trama urbana con el humedal, debido a una planificación que prioriza la rentabilidad del suelo sobre la ecología, impulsando la pavimentación masiva.",
+   ind:[{n:"Soporte Ecológico",c:["Corredores ecológicos","Conexión trama urbana – humedal"],v:"Mapas 2020 y 2026"}] },
+ { t:"Islas de calor", ic:"Mountain", g:3, show:["imperm","suelo","lluvia","eco"], sel:"imperm", foc:["supcons","suelo","imperm","lluvia","eco"], prop:"imperm",
+   x:"Como consecuencia, el indicador de Islas de Calor muestra para 2026 una expansión drástica de la mancha térmica al perder la capacidad de enfriamiento por evapotranspiración.",
+   ind:[{n:"Islas de Calor",c:["Mancha térmica 2020 – 2026","Evapotranspiración perdida"],v:"Mapas 2020 y 2026"}] },
+ { t:"Calidad del aire", ic:"Wind", g:3, show:["trans","no2","aire","eco"], sel:"aire", foc:["trans","no2","aire","eco"], prop:"no2",
+   x:"Por último, la actividad industrial y vehicular deteriora la calidad del aire; el indicador de Presión sobre el Aire demuestra cómo la acumulación de dióxido de nitrógeno, monóxido de carbono y metano supera la capacidad de dispersión del ecosistema.",
+   ind:[{n:"Presión sobre el Aire",c:["Dióxido de nitrógeno","Monóxido de carbono","Metano"],v:"Supera la capacidad de dispersión del ecosistema"}] },
+ { t:"Saturación del metabolismo territorial", ic:"Droplet", g:3, deep:["eco"], sel:"eco", foc:["eco"], prop:"plan",
+   x:"El diagrama causal de la saturación del metabolismo territorial sintetiza cómo este desborde impacta la cuenca del Humedal El Burro en tres capas.",
+   chips:["Pérdida de regulación hídrica por impermeabilización","Colapso de sumideros ambientales por escorrentía e islas de calor","Deterioro ecológico acumulado: menor resiliencia y mayor vulnerabilidad ambiental"] },
+ { t:"La respuesta social", ic:"Users", g:0, all:1, sel:"root",
+   x:"Sin embargo, para contrarrestar esta fragmentación, evaluamos el potencial de respuesta social mediante el indicador de Organizaciones Comunitarias, que mide la presencia de juntas de acción comunal y cooperativas vinculadas a huertas urbanas y equipamientos. A esto se suma el indicador de Densidad del Conocimiento, que identifica la concentración de capacidades educativas e innovación para transformar el entorno.",
+   ind:[{n:"Organizaciones Comunitarias",c:["Juntas de acción comunal","Cooperativas","Huertas urbanas y equipamientos"],v:"Potencial de respuesta social"},{n:"Densidad del Conocimiento",c:["Capacidades educativas","Innovación"],v:"Capacidad para transformar el entorno"}] },
+ { t:"Las tres rupturas", ic:"Puzzle", g:0, all:1, sel:"root", prop:"root",
+   x:"El diagrama causal de la fragmentación territorial de Kennedy sintetiza el desequilibrio del territorio, donde la hiperconcentración de Corabastos altera los usos del suelo en tres rupturas.",
+   chips:["Ruptura física y de movilidad: colapso vial del transporte de carga","Ruptura metabólica y ecológica: impermeabilización del suelo, sobrecarga del saneamiento y contaminación del Humedal El Burro","Ruptura en la gobernanza: falta de coordinación e inversión pública para descentralizar el abastecimiento"] }
+];
+const CTX=`<div class="ch"><i>${icon("BookOpen",1.8)}</i><div><h3>El problema en palabras</h3><div class="sub">Relato de la exposición</div></div></div>`+
+ STEPS.map(s=>`<div class="part"><div class="tag">${icon(s.ic,2)}${s.t}</div><p>${s.x}</p></div>`).join("");
 $("#cbody").innerHTML=CTX;
 function toggleCtx(force){
   if(isMobile()){ $("#sheet").innerHTML=`<div class="ctxp">${CTX}</div>`; $("#sheet").querySelectorAll("a[data-k]").forEach(a=>a.onclick=()=>{ closeSheet(); goNode(KK[a.dataset.k]); }); $("#sheet").classList.add("show"); $("#sheetbg").classList.add("show"); return; }
@@ -884,6 +964,73 @@ function toggleCtx(force){
 }
 $("#bCtx").onclick=()=>toggleCtx(); $("#mCtx").onclick=()=>toggleCtx(); $("#cClose").onclick=()=>toggleCtx(false);
 $("#cbody").querySelectorAll("a[data-k]").forEach(a=>a.onclick=()=>goNode(KK[a.dataset.k]));
+
+/* ============ Relato guiado: motor ============ */
+const NAR={ i:-1, on:false, play:true, tm:0, sub:[] };
+const narPanelKey=s=>s.panel&&s.panel.startsWith("pop:")?s.panel.slice(4):null;
+function narClear(){
+  clearTimeout(NAR.tm); NAR.sub.forEach(clearTimeout); NAR.sub=[]; timers.forEach(clearTimeout); timers=[];
+  closePlano(); closeHist(); if(window.POPS) POPS.close(); popPad=0; clearRelTags();
+}
+function narOpenPanel(s){
+  if(!s.panel) return;
+  if(s.panel==="plano") openPlano();
+  else if(s.panel==="hist"){ openHist(); NAR.sub.push(setTimeout(()=>{ if(NAR.on&&NAR.i===STEPS.indexOf(s)) hpSetYear(1972); },5500)); }
+  else popClick(KK[narPanelKey(s)]);
+}
+function narGo(i){
+  i=Math.max(0,Math.min(STEPS.length-1,i)); const s=STEPS[i], mob=isMobile();
+  narClear(); NAR.i=i; NAR.on=true; introStage=2; hideHints(); closeSheet(); $("#nar").classList.add("show");
+  if(s.reset){ closeDesc(DATA); DATA.open=false; } else DATA.open=true;
+  const openUp=n=>{ for(let p=n.parent;p;p=p.parent) p.open=true; };
+  (s.show||[]).forEach(k=>openUp(KK[k]));
+  (s.deep||[]).forEach(k=>{ openUp(KK[k]); (function r(m){ if(m.kids.length){ m.open=true; m.kids.forEach(r); } })(KK[k]); });
+  if(s.all) all.forEach(n=>{ if(n.kids.length) n.open=true; });
+  select(KK[s.sel||"root"]); refresh(s.show&&s.show[0]?KK[s.show[0]]:null);
+  const on=(f,ms)=>NAR.sub.push(setTimeout(()=>{ if(NAR.on&&NAR.i===i) f(); },ms));
+  // cámara
+  if(mob){
+    const t=KK[(s.foc&&s.foc[0])||s.sel||"root"]; if(t&&t.mel){ t.mel.style.scrollMarginTop="150px"; on(()=>t.mel.scrollIntoView({block:"start",behavior:"smooth"}),450); }
+  } else if(s.all) on(()=>fit(),500);
+  else if(s.panel!=="hist"){
+    const ns=(s.foc||[s.sel]).map(k=>KK[k]).filter(n=>n.vis);
+    if(s.panel==="plano") popPad=620;
+    if(ns.length) on(()=>zoomTo(ns,1700),250);
+    if(!s.panel||s.panel==="plano") on(()=>{ const n=KK[s.sel]; if(n&&n.vis){ ripple(n); } },900);
+  }
+  // animaciones: propagación de flechas y panel visual de la tarjeta
+  if(s.prop) on(()=>propagate(KK[s.prop]),mob?700:1900);
+  if(!mob) on(()=>narOpenPanel(s),s.panel==="plano"?400:s.panel==="hist"?600:2600);
+  narRender(); narSchedule();
+}
+function narSchedule(){
+  clearTimeout(NAR.tm); const s=STEPS[NAR.i], bar=$("#nar .nbar i"); if(!bar) return;
+  const ms=7000+s.x.split(/\s+/).length*380; bar.style.setProperty("--d",ms+"ms"); bar.classList.remove("run","stop"); void bar.offsetWidth;
+  if(NAR.play&&NAR.i<STEPS.length-1){ bar.classList.add("run"); NAR.tm=setTimeout(()=>narGo(NAR.i+1),ms); }
+  else bar.style.width=NAR.play?"100%":"0";
+}
+function narRender(){
+  const s=STEPS[NAR.i], c=s.g?G[s.g].color:P.root, last=NAR.i===STEPS.length-1, mob=isMobile();
+  const nar=$("#nar"); nar.style.setProperty("--c",c); nar.style.setProperty("--ink",ink(c));
+  const chips=s.chips?`<div class="nchips">${s.chips.map((t,k)=>`<div><b>0${k+1}</b><span>${t}</span></div>`).join("")}</div>`:"";
+  const ind=(s.ind||[]).map(d=>`<div class="nind"><h6>${icon("Gauge",2)}Indicador</h6><strong>${d.n}</strong>${d.c.map(x=>`<span>${x}</span>`).join("")}<div style="font:400 11.5px var(--sans);color:var(--mut);margin-top:2px">${d.v}</div></div>`).join("");
+  const pv=s.panel?`<button class="nv" id="narV">${icon("Play",2)}Ver animación</button>`:"";
+  nar.innerHTML=`<div class="nbar"><i></i></div>
+   <div class="nh"><i>${icon(s.ic,2)}</i><div><span class="ns">Relato · ${NAR.i+1} / ${STEPS.length}</span><b>${s.t}</b></div><button class="nx" id="narX" aria-label="Cerrar relato">${icon("X",2.2)}</button></div>
+   <div class="nb"><p>${s.x}</p>${chips}${ind}${pv}</div>
+   <div class="nf"><button class="btn" id="narP" aria-label="Anterior"${NAR.i?"":" disabled"}><span style="display:inline-flex;transform:rotate(180deg)">${icon("ChevronRight",2.4)}</span></button>
+     <button class="btn" id="narPl">${icon(NAR.play?"Pause":"Play",2)}${NAR.play?"Pausar":"Seguir"}</button><span class="sp"></span>
+     <button class="btn pri" id="narN">${last?"Reiniciar":"Siguiente"}${icon(last?"RotateCcw":"ChevronRight",2.4)}</button></div>
+   <div class="ndots">${STEPS.map((x,k)=>`<button data-i="${k}" aria-label="Paso ${k+1}" class="${k<NAR.i?"on":""}${k===NAR.i?" cur":""}"></button>`).join("")}</div>`;
+  $("#narX").onclick=narClose; $("#narP").onclick=()=>narGo(NAR.i-1); $("#narN").onclick=()=>narGo(last?0:NAR.i+1);
+  $("#narPl").onclick=()=>{ NAR.play=!NAR.play; narRender(); narSchedule(); };
+  nar.querySelectorAll(".ndots button").forEach(b=>b.onclick=()=>narGo(+b.dataset.i));
+  const v=$("#narV"); if(v) v.onclick=()=>{ NAR.play=false; narOpenPanel(s); narRender(); clearTimeout(NAR.tm); };
+}
+function narClose(){ NAR.on=false; narClear(); $("#nar").classList.remove("show"); }
+function narStart(){ NAR.play=true; if(!NAR.on){ closeInsp(); } narGo(0); }
+$("#bNar").onclick=()=>narStart();
+addEventListener("keydown",e=>{ if(!NAR.on) return; if(e.key==="ArrowRight") narGo(NAR.i+1); else if(e.key==="ArrowLeft") narGo(NAR.i-1); });
 
 /* ============ Paleta ============ */
 $("#palpop").innerHTML=`<h5>Paleta de colores</h5>`+Object.entries(PALS).map(([k,p])=>`<div class="pitem${k===PK?" act":""}" data-k="${k}"><span class="sw"><i style="background:${p.c1}"></i><i style="background:${p.c2}"></i><i style="background:${p.c3}"></i><i style="background:${p.root}"></i></span>${p.name}${k===PK?icon("Check",2.4):""}</div>`).join("");
@@ -904,7 +1051,7 @@ const rootT=()=>{ if(introStage===0&&!isMobile()) return d3.zoomIdentity.transla
   return d3.zoomIdentity.translate(pad.l+(W-pad.l-pad.r-(b.x1-b.x0)*k)/2-b.x0*k,pad.t+(H-pad.t-pad.b-(b.y1-b.y0)*k)/2-b.y0*k).scale(k); };
 function home(){ goto(rootT()); }
 function bbox(ns){ let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; ns.forEach(n=>{ x0=Math.min(x0,n.x); x1=Math.max(x1,n.x+n.w); y0=Math.min(y0,n.y-n.h/2); y1=Math.max(y1,n.y+n.h/2); }); return {x0,y0,x1,y1}; }
-const padL=()=>$("#ctx").classList.contains("show")&&W>900?350:70;
+const padL=()=>($("#ctx").classList.contains("show")||$("#nar").classList.contains("show"))&&W>900?385:70;
 let popPad=0;          // ancho que ocupan los paneles visuales de la derecha (para que la cámara no esconda tarjetas debajo)
 const padR=()=>70+popPad;
 function fit(ns){ const v=ns||all.filter(n=>n.vis), b=bbox(v), pad={l:padL(),r:padR(),t:110,b:100};
