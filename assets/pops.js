@@ -96,6 +96,7 @@ const CSS=`
 #pp.dark .tm-chip:hover,#pp.dark .tm-chip.on{background:#f4f4f4;color:#000;border-color:#f4f4f4}#pp.dark .tm-chip:hover small,#pp.dark .tm-chip.on small{color:#444}
 #pp.dark .tm-info{background:#131313;border:1px solid #262626;color:#ddd}#pp.dark .tm-info b{color:#fff}
 #pp.dark .tm-h5{color:#777}#pp.dark .note{color:#777}
+#pp.dark .st-tile.on{background:#f4f4f4;color:#000;box-shadow:0 14px 28px -12px rgba(0,0,0,.8)}#pp.dark .sc .m{background:#171717;color:#eee}#pp.dark .st-tile.on .sc .m{background:var(--c1);color:#111}#pp.dark .st-arr{color:#666}#pp.dark .st-cap{background:#131313;border:1px solid #262626;color:#ddd}#pp.dark .st-cap b{color:#fff}#pp.dark .st-sum{color:#9a9a9a}
 @media (max-width:900px){
   #pp{left:8px!important;right:8px;top:auto;bottom:calc(78px + env(safe-area-inset-bottom));width:auto!important;max-height:calc(100vh - 96px);overflow:auto}
   .tm-wrap{flex-direction:column}.tm-side{width:auto}.tm-map{width:100%!important}
@@ -104,12 +105,12 @@ const CSS=`
 const st=document.createElement("style"); st.textContent=CSS; document.head.appendChild(st);
 
 let pp=null, cur=null, raf=0, timers=[];
-function ensure(){ if(!pp){ pp=document.createElement("div"); pp.id="pp"; document.body.appendChild(pp); } return pp; }
+function ensure(){ if(!pp){ pp=document.createElement("div"); pp.id="pp"; pp.className="dark"; document.body.appendChild(pp); } return pp; }
 function setPad(w){ try{ popPad=w; }catch(e){} }
 function stopAll(){ cancelAnimationFrame(raf); raf=0; timers.forEach(clearTimeout); timers=[]; }
 function head(titulo,sub,extra){ return `<div class="pl-h"><i>${extra||""}</i><div><b>${titulo}</b><span>${sub}</span></div><div class="sp" id="ppBtns"></div></div>`; }
 function closeBtn(){ const b=document.createElement("button"); b.setAttribute("aria-label","Cerrar"); b.innerHTML=icon("X",2.2); b.onclick=close; $("#ppBtns").appendChild(b); }
-function close(){ cur=null; stopAll(); setPad(0); if(pp){ pp.classList.remove("show","dark"); pp.innerHTML=""; } }
+function close(){ cur=null; stopAll(); setPad(0); if(pp){ pp.classList.remove("show"); pp.innerHTML=""; } }
 function show(w){ ensure(); pp.classList.add("show"); const mob=isMobile(); pp.style.width= mob?"auto":w+"px"; setPad(mob?0:w+30); }
 
 /* ================= 1) cadena campesinos → dependencia alimentaria ================= */
@@ -120,7 +121,7 @@ const STEPS=[
  {k:"perd",n:"Pérdida de producción local", d:"Se perdió la producción agrícola local.", sc:()=>`<div class="sc sc-perd"><span class="m">${icon("Sprout")}</span><span class="w w1">${icon("Wheat")}</span><span class="w w2">${icon("Wheat")}</span><span class="w w3">${icon("Wheat")}</span></div>`},
  {k:"dep", n:"Dependencia alimentaria", d:"Dependencia alimentaria generada por la pérdida de producción agrícola local.", sc:()=>`<div class="sc sc-dep"><span class="m">${icon("ShoppingBasket")}</span><span class="a a1">${icon("ArrowDownToLine")}</span><span class="a a2">${icon("ArrowDownToLine")}</span><span class="a a3">${icon("ArrowDownToLine")}</span></div>`}];
 function openStory(key){
-  ensure(); cur="story"; pp.classList.remove("dark"); const c1=(typeof P!=="undefined"?P.c1:"#d9755f"); pp.style.setProperty("--c1",c1);
+  ensure(); cur="story"; pp.classList.add("dark"); const c1=(typeof P!=="undefined"?P.c1:"#d9755f"); pp.style.setProperty("--c1",c1);
   let tiles=""; STEPS.forEach((s,i)=>{ tiles+=`<div class="st-tile" data-i="${i}"><span class="st-n">0${i+1}</span>${s.sc()}<b>${s.n}</b></div>`+(i<STEPS.length-1?`<div class="st-arr">${icon("ArrowRight",2.2)}</div>`:""); });
   pp.innerHTML=head("De los campesinos a la dependencia alimentaria","Cómo se encadena",icon("Wheat",2))+`<div class="st-row">${tiles}</div><div class="st-cap" id="stCap"></div>
    <div class="st-sum">La dependencia alimentaria viene de perder la producción agrícola local: un modelo donde era más rentable convertir tierra rural en suelo urbano, acelerado por la expulsión de campesinos.</div>`;
@@ -140,7 +141,7 @@ const gauss=(h,m,s)=>Math.exp(-((h-m)*(h-m))/(2*s*s));
 const intensity=h=>Math.min(1,.16+.84*Math.max(gauss(h,7.2,1.25),.92*gauss(h,18,1.6),.55*gauss(h+24,31,2)));
 const phase=h=>h<4.5?"Madrugada":h<6?"Amanece":h<9.5?"Hora pico de la mañana":h<16?"Valle del día":h<20?"Hora pico de la tarde":"Noche";
 function openTM(){
-  ensure(); cur="tm"; pp.classList.add("dark"); pp.innerHTML=head("Bogotá respira con TransMilenio","Sobrecarga de la red de transporte",icon("Bus",2))+`<div class="tm-wrap"><div class="tm-map" id="tmMap"></div><div class="tm-side" id="tmSide"></div></div>`; closeBtn(); show(10);
+  ensure(); cur="tm";  pp.innerHTML=head("Bogotá respira con TransMilenio","Sobrecarga de la red de transporte",icon("Bus",2))+`<div class="tm-wrap"><div class="tm-map" id="tmMap"></div><div class="tm-side" id="tmSide"></div></div>`; closeBtn(); show(10);
   loadData(()=>{ if(cur!=="tm") return; buildTM(); });
 }
 function sizeTM(){ const mob=isMobile(), B=window.BOG; const mapEl=$("#tmMap"); if(!mapEl) return; let h=Math.min(innerHeight-96,860)-86, w=h*B.w/B.h; if(mob){ w=Math.min(innerWidth-40,360); h=w*B.h/B.w; h=Math.min(h,innerHeight*.5); w=h*B.w/B.h; mapEl.style.margin="0 auto"; } mapEl.style.width=w+"px"; mapEl.style.height=h+"px"; pp.style.width=mob?"auto":(w+236+14+26)+"px"; setPad(mob?0:w+236+14+56); }
@@ -176,7 +177,7 @@ function buildTM(){
 
 /* ================= 3) clusters laborales (esquema) ================= */
 function openClusters(){
-  ensure(); cur="cl"; pp.classList.remove("dark"); const col=(typeof P!=="undefined")?[P.c1,P.c2,P.c3,"#b9b3a8"]:["#d9755f","#cdae67","#6fb1a7","#b9b3a8"];
+  ensure(); cur="cl"; pp.classList.add("dark"); const col=(typeof P!=="undefined")?[P.c1,P.c2,P.c3,"#b9b3a8"]:["#d9755f","#cdae67","#6fb1a7","#b9b3a8"];
   pp.innerHTML=head("Clusters laborales","Dónde se concentra el trabajo",icon("Briefcase",2))+`<div class="cl-box" id="clB"><svg id="clS" viewBox="0 0 600 420" preserveAspectRatio="xMidYMid meet"></svg></div><div class="note">Representación esquemática de aglomeración de empleo: grupos densos de actividad conectados entre sí y con la periferia. No son datos reales.</div>`; closeBtn(); show(640);
   const box=$("#clB"); box.style.height=Math.min(420,innerHeight*.5)+"px";
   const rnd=(s=>()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; })(9); const C=[[170,150,46],[420,120,40],[470,300,52],[190,310,36]];
