@@ -244,6 +244,29 @@
     #insp{width:240px} #ctx{width:280px}
   }
 
+  /* cursor propio con el color de la paleta (cambia al color de la variable bajo el puntero) */
+  #cur,#cur2{display:none;position:fixed;left:0;top:0;pointer-events:none;z-index:100;border-radius:50%;opacity:0;transition:opacity .25s}
+  #cur{width:8px;height:8px;background:var(--cc)}
+  #cur2{width:34px;height:34px;border:2px solid var(--cc);box-shadow:0 0 18px color-mix(in srgb,var(--cc) 50%,transparent);transition:width .25s,height .25s,background .25s,opacity .25s}
+  body.cur-hover #cur2{width:58px;height:58px;background:color-mix(in srgb,var(--cc) 14%,transparent)}
+  body.cur-down #cur2{width:22px;height:22px}
+  @media (pointer:fine){ html,body,body *{cursor:none!important} #cur,#cur2{display:block} body.hist-open *{cursor:auto!important} body.hist-open #cur,body.hist-open #cur2{display:none!important} }
+  /* evolución histórica (página incrustada) */
+  #hist{position:fixed;inset:0;z-index:95;background:#000;display:none;flex-direction:column}
+  #hist.show{display:flex;animation:hin .6s cubic-bezier(.2,.9,.3,1)}
+  @keyframes hin{from{opacity:0;transform:scale(.97)}}
+  .hbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:#050505}
+  .hti{display:flex;align-items:center;gap:10px;margin-right:auto;min-width:0}
+  .hti i{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--hc,#d9755f);color:#0a0a0a}.hti i svg{width:19px;height:19px}
+  .hti b{display:block;font:700 14px var(--sans)}.hti span{font:400 10px var(--mono);letter-spacing:1px;color:var(--mut);text-transform:uppercase}
+  #hframe{flex:1;width:100%;border:0;background:#000}
+  /* constelación del inicio */
+  #ghost{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;transition:opacity 1.4s}
+  #ghost.off{opacity:0}
+  #ghost line{stroke:#fff;stroke-opacity:.17;stroke-width:1.8}
+  #ghost circle{animation:gtw 3.6s ease-in-out infinite}
+  @keyframes gtw{50%{opacity:.35}}
+
   /* =========================== MÓVIL =========================== */
   #mob{display:none}
   @media (max-width:900px){
@@ -365,6 +388,8 @@
   <div id="sheetbg"></div><div id="sheet"></div>
 </div>
 
+<div id="cur"></div><div id="cur2"></div>
+<div id="hist"><div class="hbar"><div class="hti">TITLE</div><a class="btn" id="hOpen" target="_blank" rel="noopener">OPEN</a><button class="btn pri" id="hClose">CLOSE</button></div><iframe id="hframe" title="Evolución histórica del territorio" allow="fullscreen"></iframe></div>
 <script src="lib/d3.min.js"></script>
 <script src="lib/lucide.min.js"></script>
 <script>
@@ -520,7 +545,7 @@ function refresh(origin){
   });
   let vx=0; xedges.forEach(x=>{ const on=x.s.vis&&x.t.vis; if(on) vx++; x.p.classList.toggle("on",on); });
   const el=$("#sX"); if(el) el.textContent=vx+"/"+xedges.length; const sn=$("#sN"); if(sn) sn.textContent=all.filter(n=>n.vis).length+"/"+all.length;
-  updateLanes(); drawMini(); renderInsp(); applySelFocus();
+  updateLanes(); drawMini(); renderInsp(); applySelFocus(); const gh=$("#ghost"); if(gh) gh.classList.toggle("off",!!DATA.open);
 }
 function toggle(n){
   if(!n.kids.length){ ping(n); if(!isMobile()) focusOn(n); return; }
@@ -553,10 +578,10 @@ all.forEach(n=>{
   e.style.width=n.w+"px"; e.style.height=n.h+"px"; e.style.left=n.x+"px"; e.style.top=(n.y-n.h/2)+"px";
   const p=n.parent||n; e.style.setProperty("--dx",(n.parent?p.x+p.w-n.x:0)+"px"); e.style.setProperty("--dy",(p.y-n.y)+"px");
   const xb=n.xs.length?`<span class="xb" title="Conexiones con otras ramas">${icon("ArrowLeftRight",2.4)}${n.xs.length}</span>`:"";
-  e.innerHTML=`<div class="glare"></div><div class="wm">${icon(n.i,1.2)}</div><div class="tile">${icon(n.i)}</div><div class="txt"><span class="id">${n.depth===0?"FENÓMENO CENTRAL":"VAR "+n.code}${xb}</span><span class="lb">${n.depth===0?n.t:n.s}</span></div>${n.kids.length?`<div class="cnt"><span>${n.kids.length}</span>${icon("ChevronRight",2.4)}</div>`:""}`;
+  e.innerHTML=`<div class="glare"></div><div class="wm">${icon(n.i,1.2)}</div><div class="tile">${icon(n.i)}</div><div class="txt"><span class="id">${n.depth===0?"FENÓMENO CENTRAL":"VAR "+n.code}${xb}${n.key==="hig"?`<span class="xb" title="Abre la evolución histórica">${icon("History",2.2)}historia</span>`:""}</span><span class="lb">${n.depth===0?n.t:n.s}</span></div>${n.kids.length?`<div class="cnt"><span>${n.kids.length}</span>${icon("ChevronRight",2.4)}</div>`:""}`;
   e.title=n.t; n.el=e; world.appendChild(e);
   if(n.depth===0) e.classList.add("on");
-  e.addEventListener("click",ev=>{ ev.stopPropagation(); if(moved) return; ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); });
+  e.addEventListener("click",ev=>{ ev.stopPropagation(); if(moved) return; ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig") setTimeout(openHist,1100); });
   e.addEventListener("mouseenter",()=>focusLine(n)); e.addEventListener("mouseleave",()=>focusLine(null));
   e.addEventListener("mousemove",ev=>{ const r=e.getBoundingClientRect(); e.style.setProperty("--mx",((ev.clientX-r.left)/T.k)+"px"); e.style.setProperty("--my",((ev.clientY-r.top)/T.k)+"px"); });
   if(n.parent){
@@ -607,7 +632,7 @@ function focusLine(n){
     const xch=n.xs.length?`<div class="xchips">${n.xs.map(x=>{ const o=x.s===n?x.t:x.s, sym=!x.dir?"—":(x.s===n?"→":"←"); return `<span class="xchip" data-k="${o.key}" style="--c:${o.color}"><b>${sym}</b>${o.s}</span>`; }).join("")}</div>`:"";
     d.innerHTML=`<div class="mc"><div class="mt">${icon(n.i)}</div><div class="mx"><span class="mid">VAR ${n.code}${xb}</span><span class="ml">${n.t}</span>${xch}</div><div class="mr">${n.kids.length?`<span class="mcnt"><span>${n.kids.length}</span>${icon("ChevronRight",2.4)}</span>`:""}<button class="mi" aria-label="Detalles">${icon("Info",2)}</button></div></div>${n.kids.length?`<div class="mk"><div class="mki"></div></div>`:""}`;
     n.mel=d;
-    d.querySelector(".mc").addEventListener("click",()=>{ select(n); if(n.kids.length) toggle(n); else openSheet(n); });
+    d.querySelector(".mc").addEventListener("click",()=>{ select(n); if(n.kids.length) toggle(n); else openSheet(n); if(n.key==="hig") setTimeout(openHist,800); });
     d.querySelector(".mi").addEventListener("click",ev=>{ ev.stopPropagation(); select(n); openSheet(n); });
     d.querySelectorAll(".xchip").forEach(c=>c.addEventListener("click",ev=>{ ev.stopPropagation(); goNode(KK[c.dataset.k]); }));
     if(n.kids.length){ const box=d.querySelector(".mki"); n.kids.forEach(k=>box.appendChild(mkm(k))); }
@@ -637,11 +662,11 @@ function inspHTML(n){
   ${n.key==="mono"?`<div class="isec">${icon("Unlink",2)}Sin conectores en el tablero de Miro</div>`:""}
   <div class="isec">${icon("Gauge",2)}Indicadores</div>
   <div class="istats" style="--c:${n.color}"><div>${icon("Layers",2)}<b>${n.depth}</b><span>Nivel</span></div><div>${icon("GitBranch",2)}<b>${n.kids.length}</b><span>Directas</span></div><div>${icon("Network",2)}<b>${gr.nei.length}</b><span>Conexiones</span></div></div>
-  <div class="iact"><button class="btn pri" data-a="prop">${icon("Play",2)}Propagar</button>${n.kids.length?`<button class="btn" data-a="branch">${icon("ListTree",2)}Abrir rama</button>`:""}</div>`;
+  <div class="iact"><button class="btn pri" data-a="prop">${icon("Play",2)}Propagar</button>${n.key==="hig"?`<button class="btn" data-a="hist">${icon("History",2)}Evolución histórica</button>`:""}${n.kids.length?`<button class="btn" data-a="branch">${icon("ListTree",2)}Abrir rama</button>`:""}</div>`;
 }
 function bindAct(root){
   root.querySelectorAll(".rel").forEach(r=>r.onclick=()=>{ if(isMobile()) closeSheet(); goNode(KK[r.dataset.k]); });
-  root.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{ if(!sel) return; if(b.dataset.a==="prop") runProp(sel); else openSub(sel); if(isMobile()) closeSheet(); });
+  root.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{ if(!sel) return; if(b.dataset.a==="prop") runProp(sel); else if(b.dataset.a==="hist") openHist(); else openSub(sel); if(isMobile()) closeSheet(); });
 }
 function renderInsp(){
   if(isMobile()) return;
@@ -704,6 +729,15 @@ function propagate(start){
 function runProp(n){ const start=n||sel||DATA; if(!DATA.open){ DATA.open=true; hideHints(); refresh(DATA); if(!isMobile()) reveal([DATA,...DATA.kids]); setTimeout(()=>propagate(DATA),950); } else propagate(start); }
 $("#bProp").onclick=()=>runProp();
 
+/* ============ Evolución histórica (página del proyecto, incrustada) ============ */
+const HURL="https://anasoficasca-code.github.io/humedalburro/problematicas.html";
+$(".hti").innerHTML=`<i>${icon("History",2)}</i><div><b>Evolución histórica del territorio</b><span>Humedal El Burro · página del proyecto</span></div>`;
+$("#hOpen").innerHTML=icon("ExternalLink",2)+"Abrir aparte"; $("#hOpen").href=HURL; $("#hClose").innerHTML=icon("X",2)+"Volver al mapa";
+$("#hist").style.setProperty("--hc",P.c1);
+function openHist(){ const f=$("#hframe"); if(!f.dataset.l){ f.src=HURL; f.dataset.l="1"; } $("#hist").classList.add("show"); document.body.classList.add("hist-open"); }
+function closeHist(){ $("#hist").classList.remove("show"); document.body.classList.remove("hist-open"); }
+$("#hClose").onclick=closeHist; addEventListener("keydown",e=>{ if(e.key==="Escape") closeHist(); });
+
 /* ============ Contexto (narrativa de la exposición) ============ */
 const lk=(k,t)=>`<a data-k="${k}" style="--c:${KK[k].color}">${t}</a>`;
 const CTX=`<div class="ch"><i>${icon("BookOpen",1.8)}</i><div><h3>El problema en palabras</h3><div class="sub">Textos de la exposición · toca lo subrayado</div></div></div>
@@ -738,21 +772,23 @@ const zoom=d3.zoom().scaleExtent([.12,2.5]).clickDistance(5)
 d3.select(stage).call(zoom).on("dblclick.zoom",null).on("pointerdown.t",()=>{ startT=T; });
 const sSel=()=>d3.select(stage);
 function goto(t,ms=DUR){ sSel().transition().duration(ms).ease(d3.easeCubicInOut).call(zoom.transform,t); }
-const rootT=()=>d3.zoomIdentity.translate(W<1000?W*.2:W*.17,H*.5+24).scale(W<1000?.75:1);
+const rootT=()=>{ const b=bbox(all), pad={l:padL(),r:60,t:100,b:90}, k=Math.min((W-pad.l-pad.r)/(b.x1-b.x0+80),(H-pad.t-pad.b)/(b.y1-b.y0+80),1);
+  return d3.zoomIdentity.translate(pad.l+(W-pad.l-pad.r-(b.x1-b.x0)*k)/2-b.x0*k,pad.t+(H-pad.t-pad.b-(b.y1-b.y0)*k)/2-b.y0*k).scale(k); };
 function home(){ goto(rootT()); }
 function bbox(ns){ let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; ns.forEach(n=>{ x0=Math.min(x0,n.x); x1=Math.max(x1,n.x+n.w); y0=Math.min(y0,n.y-n.h/2); y1=Math.max(y1,n.y+n.h/2); }); return {x0,y0,x1,y1}; }
+const padL=()=>$("#ctx").classList.contains("show")&&W>900?350:70;
 const padR=()=>$("#insp").classList.contains("show")&&W>900?(W>1180?300:270):70;
-function fit(ns){ const v=ns||all.filter(n=>n.vis), b=bbox(v), pad={l:70,r:padR(),t:110,b:100};
+function fit(ns){ const v=ns||all.filter(n=>n.vis), b=bbox(v), pad={l:padL(),r:padR(),t:110,b:100};
   const k=Math.min((W-pad.l-pad.r)/(b.x1-b.x0+60),(H-pad.t-pad.b)/(b.y1-b.y0+80),1.15);
   goto(d3.zoomIdentity.translate(pad.l+(W-pad.l-pad.r-(b.x1-b.x0)*k)/2-b.x0*k,pad.t+(H-pad.t-pad.b-(b.y1-b.y0)*k)/2-b.y0*k).scale(k)); }
-function reveal(ns){ const b=bbox(ns), pad={l:60,r:padR(),t:110,b:110};
+function reveal(ns){ const b=bbox(ns), pad={l:padL(),r:padR(),t:110,b:110};
   let k=T.k; const need=Math.min((W-pad.l-pad.r)/(b.x1-b.x0+40),(H-pad.t-pad.b)/(b.y1-b.y0+60)); if(need<k) k=Math.max(.25,need);
   let tx=T.x, ty=T.y; const L=b.x0*k+tx, R=b.x1*k+tx, Tp=b.y0*k+ty, B=b.y1*k+ty;
   if(L<pad.l) tx+=pad.l-L; else if(R>W-pad.r) tx-=R-(W-pad.r); if(Tp<pad.t) ty+=pad.t-Tp; else if(B>H-pad.b) ty-=B-(H-pad.b);
   if(k!==T.k||tx!==T.x||ty!==T.y) goto(d3.zoomIdentity.translate(tx,ty).scale(k),750); }
 /* zoom lento y suave hacia lo que se toca (y hacia sus relaciones entre ramas) */
 function zoomTo(ns,ms=1600){
-  const b=bbox(ns), pad={l:70,r:padR(),t:100,b:90};
+  const b=bbox(ns), pad={l:padL(),r:padR(),t:100,b:90};
   const k=Math.max(.3,Math.min((W-pad.l-pad.r)/(b.x1-b.x0+140),(H-pad.t-pad.b)/(b.y1-b.y0+140),1.3));
   goto(d3.zoomIdentity.translate(pad.l+(W-pad.l-pad.r-(b.x1-b.x0)*k)/2-b.x0*k,pad.t+(H-pad.t-pad.b-(b.y1-b.y0)*k)/2-b.y0*k).scale(k),ms);
 }
@@ -818,7 +854,27 @@ function wireSearch(inp,resBox){
 }
 wireSearch($("#q"),$("#res")); wireSearch($("#mq"),$("#mres"));
 
+/* ============ Cursor propio (solo con mouse) ============ */
+if(matchMedia("(pointer:fine)").matches){
+  const cur=$("#cur"), cur2=$("#cur2"), root=document.documentElement; let tx=-100,ty=-100,x=-100,y=-100,shown=false;
+  root.style.setProperty("--cc",P.c1);
+  addEventListener("mousemove",e=>{ tx=e.clientX; ty=e.clientY; if(!shown){ shown=true; x=tx; y=ty; cur.style.opacity=cur2.style.opacity=1; }
+    cur.style.transform=`translate(${tx}px,${ty}px) translate(-50%,-50%)`;
+    const t=e.target, hov=t.closest&&t.closest(".node,.btn,button,a,.li,.pitem,.rel,.xh,.res div,.lt,.xchip,.pitem"), nd=t.closest&&t.closest(".node");
+    document.body.classList.toggle("cur-hover",!!hov);
+    root.style.setProperty("--cc", nd? (nd.style.getPropertyValue("--c")||P.c1) : P.c1); });
+  addEventListener("mousedown",()=>document.body.classList.add("cur-down")); addEventListener("mouseup",()=>document.body.classList.remove("cur-down"));
+  document.addEventListener("mouseleave",()=>{ cur.style.opacity=cur2.style.opacity=0; shown=false; });
+  (function loop(){ x+=(tx-x)*.2; y+=(ty-y)*.2; cur2.style.transform=`translate(${x}px,${y}px) translate(-50%,-50%)`; requestAnimationFrame(loop); })();
+}
+
 /* ============ Inicio ============ */
+/* constelación fantasma: toda la red como silueta tenue mientras no se ha abierto nada */
+(function(){ const g=document.createElementNS(NS,"svg"); g.id="ghost"; g.setAttribute("width","1"); g.setAttribute("height","1"); let s="";
+  edges.forEach(e=>{ const a=KK[e.a.key], b=KK[e.b.key]; s+=`<line x1="${a.x+a.w/2}" y1="${a.y}" x2="${b.x+b.w/2}" y2="${b.y}"/>`; });
+  all.forEach((n,i)=>{ if(n.depth===0) return; s+=`<circle cx="${n.x+n.w/2}" cy="${n.y}" r="${n.depth===1?16:9}" fill="${n.color}" opacity=".85" style="animation-delay:${(-i*.37).toFixed(2)}s"/>`; });
+  g.innerHTML=s; world.insertBefore(g,LK); })();
+if(!isMobile()&&!location.hash){ $("#ctx").classList.add("show"); }
 d3.select(stage).call(zoom.transform,rootT());
 refresh(null); updateVP();
 const hs=location.hash;
