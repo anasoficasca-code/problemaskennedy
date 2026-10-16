@@ -361,6 +361,8 @@
   #hf{width:100%;height:100%;border:0;display:block;background:#000}
   .hload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;background:#050505;font:500 11px var(--mono);letter-spacing:1px;color:var(--mut);text-transform:uppercase;transition:opacity .6s;pointer-events:none}
   .hload svg{width:18px;height:18px;animation:hspin 1.4s linear infinite}.hload.off{opacity:0}
+  #hImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:opacity .45s;background:#050505}#hf{display:none}#hp.d3 #hf{display:block}#hp.d3 #hImg{display:none}
+  .hrow{display:flex;align-items:center;gap:14px;margin:6px 2px 0;padding-top:8px;border-top:1px solid var(--line)}.hrow .hl{margin:0;padding:0;border:0}.hb3{background:none;cursor:pointer;color:#fff!important}
   @keyframes hspin{to{transform:rotate(360deg)}}
   .hcap{font:400 11.5px/1.4 var(--sans);color:#d2d2d2;margin:8px 2px 0;min-height:32px}.hcap b{color:#fff;font-weight:600}
   body.cur-off #cur,body.cur-off #cur2{opacity:0!important}
@@ -904,10 +906,11 @@ function hpBuild(){
   if(hpBuilt) return; hpBuilt=true; const hp=$("#hp");
   hp.innerHTML=`<div class="hh"><i class="hi">${icon("History",2)}</i><div><b id="hTitle"></b><span id="hSub"></span></div><button class="hx" aria-label="Cerrar">${icon("X",2.2)}</button></div>
    <div class="htl" id="htl"></div>
-   <div class="hv"><iframe id="hf" title="Axonometría del territorio" allow="fullscreen"></iframe><div class="hload">${icon("Box",2)}Cargando axonometría…</div></div>
+   <div class="hv"><img id="hImg" alt="Axonometría del territorio" decoding="async"><iframe id="hf" title="Axonometría del territorio" allow="fullscreen"></iframe><div class="hload off">${icon("Box",2)}Cargando axonometría…</div></div>
    <div class="hcap" id="hcap"></div>
-   <a class="hl" href="${HURL}" target="_blank" rel="noopener">${icon("ExternalLink",2)}Ver la página completa</a>`;
+   <div class="hrow"><button class="hl hb3" id="h3d">${icon("Box",2)}Explorar en 3D</button><a class="hl" href="${HURL}" target="_blank" rel="noopener">${icon("ExternalLink",2)}Ver la página completa</a></div>`;
   hp.querySelector(".hx").onclick=closeHist;
+  $("#h3d").onclick=hp3d;
   const hf=$("#hf"); hf.addEventListener("mouseenter",()=>document.body.classList.add("cur-off")); hf.addEventListener("mouseleave",()=>document.body.classList.remove("cur-off"));
   hf.addEventListener("load",()=>{ hfInject(); hfGate(); hfYear(hpYear); hfWait(); setTimeout(()=>{ hfInject(); hfGate(); },300); });
   hpSetMode(hpMode);
@@ -919,8 +922,12 @@ function hpSetMode(m){
   $("#htl").innerHTML=M.tl.map((x,k)=>`<button class="hd${k?"":" on"}" data-y="${x.y}"><b>${x.b}</b><small>${x.s}</small></button>`).join(`<span class="hln">${M.em?`<em>${M.em}</em>`:""}</span>`);
   hp.querySelectorAll(".hd").forEach(b=>b.onclick=()=>hpSetYear(+b.dataset.y)); hpSetYear(M.tl[M.start||0].y);
 }
-function hpSetYear(y){ hpYear=y; const hp=$("#hp"); hp.querySelectorAll(".hd").forEach(b=>b.classList.toggle("on",+b.dataset.y===y)); $("#hcap").innerHTML=CAP[y]; hfYear(y); hfWait(); }
-function preloadHist(){ hpBuild(); const hf=$("#hf"); if(!hf.dataset.l){ hf.dataset.l="1"; hf.src=HEMB; } }
+function hpSetYear(y){ hpYear=y; const hp=$("#hp"); hp.querySelectorAll(".hd").forEach(b=>b.classList.toggle("on",+b.dataset.y===y)); $("#hcap").innerHTML=CAP[y];
+  const im=$("#hImg"), src="assets/axo/"+HF_ERA[y]+".jpg"; if(im&&!im.src.endsWith(src)){ im.style.opacity=0; im.onload=()=>{ im.style.opacity=1; }; im.src=src; }
+  if(hp.classList.contains("d3")){ hfYear(y); hfWait(); } }
+function hp3d(){ const hp=$("#hp"), hf=$("#hf"); if(hp.classList.contains("d3")){ hp.classList.remove("d3"); hfPause(); $("#h3d").lastChild.textContent="Explorar en 3D"; return; }
+  hp.classList.add("d3"); $("#h3d").lastChild.textContent="Volver a la imagen"; if(!hf.dataset.l){ hf.dataset.l="1"; hf.src=HEMB; } hfResume(); hfYear(hpYear); hfWait(); }
+function preloadHist(){ hpBuild(); [1956,1972,1988,2024].forEach(e=>{ const i=new Image(); i.src="assets/axo/"+e+".jpg"; }); }
 function placeHP(){
   if(!hpOpen||isMobile()) return;
   const hp=$("#hp"), hv=hp.querySelector(".hv"), r=KK[hpMode].el.getBoundingClientRect();
@@ -941,7 +948,7 @@ function openHist(mode){
   if(!isMobile()) frameHigRow();
   placeHP(); requestAnimationFrame(placeHP); setTimeout(placeHP,700); setTimeout(placeHP,1500);
 }
-function closeHist(){ hpOpen=false; hfPause(); document.body.classList.remove("hp-open","cur-off"); $("#hp").classList.remove("show"); }
+function closeHist(){ hpOpen=false; hfPause(); document.body.classList.remove("hp-open","cur-off"); const h=$("#hp"); h.classList.remove("show"); if(h.classList.contains("d3")){ h.classList.remove("d3"); const b=$("#h3d"); if(b) b.lastChild.textContent="Explorar en 3D"; } }
 addEventListener("keydown",e=>{ if(e.key==="Escape") closeHist(); });
 
 /* ============ Contexto (narrativa de la exposición) ============ */
@@ -1073,7 +1080,7 @@ function sqScene(){
   const S=$("#sqS"); S.innerHTML=`<div class="sq-txt"><span class="kk">${String(SQ.i+1).padStart(2,"0")} · ${s.w}</span><h2>${s.t}</h2>${sents.map((t,k)=>`<p style="--k:${k}">${t}</p>`).join("")}${chips}${ind}${pv}</div><div class="sq-dia">${sqDiagram(s)}</div>`;
   S.classList.toggle("hasp",hasP&&!mob); void S.offsetWidth; S.classList.add("show");
   $("#sqS").style.marginRight=""; const v=$("#sqV"); if(v) v.onclick=()=>{ SQ.play=false; clearTimeout(SQ.tm); sqFoot(); $("#sqB").className=""; sqPanel(s); };
-  if(hasP&&!mob&&(!isH||($("#hf")&&$("#hf").dataset.l))) sqAt(()=>sqPanel(s),900);
+  if(hasP&&!mob&&(true)) sqAt(()=>sqPanel(s),900);
   if([2,3,6,7].includes(SQ.i)) sqAt(()=>{ try{ preloadHist(); }catch(e){} },SQ.i===2||SQ.i===6?5000:300);
   sqSched();
 }
