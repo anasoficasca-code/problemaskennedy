@@ -307,7 +307,7 @@
   .nv{display:inline-flex;gap:7px;align-items:center;margin-top:14px;height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--line2);background:#f4f4f4;color:#000;font:600 12.5px var(--sans);cursor:pointer}.nv svg{width:15px;height:15px}
   .sq-dia{flex:1;min-width:0;display:flex;align-items:center;justify-content:center}
   .sq-scene.hasp{flex-direction:column;gap:10px;margin-right:700px}.sq-scene.hasp .sq-txt{width:auto;flex:none;max-height:46%}.sq-scene.hasp .sq-dia{flex:1;min-height:0}
-  .sq-dia{overflow:hidden}.sq-dia svg{flex:1;min-width:0;min-height:0;width:100%;height:100%;overflow:visible}
+  .sq-dia{overflow:hidden}.sq-dia>svg{flex:1;min-width:0;min-height:0;width:100%;height:100%;overflow:visible}
   .dn{opacity:0;animation:dnin .7s var(--d) cubic-bezier(.2,1.1,.3,1) forwards;transform-box:fill-box;transform-origin:center}
   @keyframes dnin{from{opacity:0;transform:translateY(10px) scale(.92)}to{opacity:1;transform:none}}
   .de{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:.85;animation:ddraw 1s calc(var(--d) + .35s) ease forwards}
@@ -334,6 +334,13 @@
     #pl,#pp,#hp{z-index:80}
     body.sq-open #pl,body.sq-open #pp,body.sq-open #hp{top:auto!important;bottom:calc(112px + env(safe-area-inset-bottom))!important;max-height:calc(100vh - 190px);overflow:auto}
     .sq-txt{display:flex;flex-direction:column}.sq-txt .kk,.sq-txt h2{order:-2}.sq-txt .nv{order:-1;align-self:flex-start;margin:0 0 12px}
+    .sq-txt>*{flex-shrink:0}
+    .sq-dots{gap:3px}.sq-dots button{width:6px}.sq-lab{flex:none;max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;letter-spacing:1.2px}
+    /* árbol: menos sangría por nivel para que las fichas profundas no queden angostas */
+    .mki{margin-left:5px;padding-left:7px}.mki>.mn>.mc::after{left:-7px;width:7px}
+    .mki .mki .mki .mki{margin-left:2px;padding-left:5px}.mki .mki .mki .mki>.mn>.mc::after{left:-5px;width:5px}
+    .mki .mki .mc{gap:9px;padding:9px 8px 9px 12px}.mki .mki .mt{width:38px;height:38px;border-radius:11px}.mki .mki .mt svg{width:21px;height:21px}
+    .mki .mki .mi{width:30px;height:30px}.mki .mki .mcnt{padding:0 4px 0 8px}
   }
   body.sq-open #hp{left:auto!important;right:20px;top:70px!important;width:min(640px,calc(100vw - 40px));z-index:62}body.sq-open #hp::after{display:none}body.sq-open .hv{height:min(46vh,420px)!important}
   /* panel pequeño de evolución histórica, pegado sobre la tarjeta de Higiene estatal */
@@ -1020,7 +1027,7 @@ function sqDiagram(s){
   for(let it=0;it<keys.length;it++){ let ch=false; es.forEach(([a,b],i)=>{ if(!back.has(i)&&lay[b]<=lay[a]&&lay[a]+1<keys.length){ lay[b]=lay[a]+1; ch=true; } }); if(!ch) break; }
   const cols=[]; keys.forEach(k=>{ (cols[lay[k]]=cols[lay[k]]||[]).push(k); });
   const NC=cols.filter(Boolean).length, rows=Math.max(...cols.filter(Boolean).map(c=>c.length));
-  const NW=V?158:184, NH=V?60:66, CW=V?170:222, RH=V?88:92, FS=V?11.5:12.5, WR=V?15:19;
+  const N3=V&&rows>=3, NW=V?(N3?118:158):184, NH=V?(N3?62:60):66, CW=V?(N3?128:170):222, RH=V?88:92, FS=V?(N3?11:11.5):12.5, WR=V?(N3?12:15):19;
   const pos={}; let ci=0; cols.forEach(c=>{ if(!c) return; c.forEach((k,r)=>{ const o=(rows-c.length)/2+r; pos[k]=V?{x:o*CW+10,y:ci*RH+14,c:ci}:{x:ci*CW+10,y:o*RH+14,c:ci}; }); ci++; });
   const hasBack=!V&&es.some(([a,b])=>pos[b].c<=pos[a].c), TOP=hasBack?46:0; if(TOP) keys.forEach(k=>pos[k].y+=TOP);
   const Wd=V?(rows-1)*CW+NW+20:(NC-1)*CW+NW+20, Hd=(V?(NC-1)*RH+NH+28:(rows-1)*RH+NH+28)+TOP;
@@ -1040,9 +1047,9 @@ function sqDiagram(s){
     if(dist[a]!=null) ph+=`<path class="dp" pathLength="1" d="${d}" style="--d:${(2.6+dist[a]*.8).toFixed(2)}s"/>`;
   });
   keys.forEach(k=>{ const p=pos[k], c=col(k), n=KK[k], root=k==="root", dl=(p.c*.45).toFixed(2), lines=sqWrap(root?n.t:n.s,WR), sel=k===s.sel;
-    const ic=icon(n.i,1.9).replace("<svg ",`<svg x="${V?8:12}" y="${NH/2-12}" width="24" height="24" `);
+    const IS=N3?19:24, ic=icon(n.i,1.9).replace("<svg ",`<svg x="${N3?7:V?8:12}" y="${NH/2-IS/2}" width="${IS}" height="${IS}" `);
     nh+=`<g transform="translate(${p.x} ${p.y})"><g class="dn" style="--d:${dl}s"><rect width="${NW}" height="${NH}" rx="14" fill="${root?P.root:"#0c0c0c"}" stroke="${c}" stroke-width="${sel?3:1.6}"/>${sel?`<rect class="dsel" width="${NW}" height="${NH}" rx="14" fill="none" stroke="${c}" stroke-width="3"/>`:""}<g style="color:${root?"#000":c}">${ic}</g>`+
-      lines.map((l,i)=>`<text x="${V?38:48}" y="${NH/2+4+(i-(lines.length-1)/2)*(FS+2.5)}" font-size="${FS}" font-weight="600" fill="${root?"#111":"#eee"}">${l}</text>`).join("")+`</g></g>`; });
+      lines.map((l,i)=>`<text x="${N3?31:V?38:48}" y="${NH/2+4+(i-(lines.length-1)/2)*(FS+2.5)}" font-size="${FS}" font-weight="600" fill="${root?"#111":"#eee"}"${N3&&l.length>WR+1?` textLength="${NW-31-7}" lengthAdjust="spacingAndGlyphs"`:""}>${l}</text>`).join("")+`</g></g>`; });
   return `<svg viewBox="0 0 ${Wd} ${Hd}" preserveAspectRatio="xMidYMid meet"><defs>${defs}</defs>${eh}${ph}${nh}</svg>`;
 }function sqBuild(){
   if(SQ.built) return; SQ.built=true; const el=document.createElement("div"); el.id="sq";
