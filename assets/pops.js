@@ -62,21 +62,21 @@ const CSS=`
 .tm-chip:hover,.tm-chip.on{background:#111;color:#fff;border-color:#111}.tm-chip:hover small,.tm-chip.on small{color:#bbb}
 .tm-info{padding:9px 11px;border-radius:12px;background:#f6f4ee;font:400 11.5px/1.4 var(--sans);color:#222;min-height:58px}.tm-info b{display:block;font:700 12px var(--sans)}
 .tm-h5{font:600 9.5px var(--mono);letter-spacing:1.1px;text-transform:uppercase;color:#888;margin:0 0 5px}
-.tm-world{transform-origin:50% 50%;animation:tmb 7s ease-in-out infinite}
+.tm-map svg{will-change:transform;transform-origin:50% 50%;animation:tmb 7s ease-in-out infinite}
 @keyframes tmb{50%{transform:scale(calc(1 + var(--amp,.01)))}}
 .tm-loc{fill:#161616;stroke:#303030;stroke-width:.8}
 .tm-loc.ken{fill:#2a1d12;stroke:#ffb02e;stroke-width:1.6;animation:tmken 3.4s ease-in-out infinite}
 @keyframes tmken{50%{fill:#3a2814;stroke-width:2.4}}
 .tm-g{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:9;opacity:calc(.12 + var(--int,.3)*.28)}
 .tm-l{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:2.6;opacity:calc(.55 + var(--int,.3)*.45)}
-.tm-d{fill:none;stroke:#fff;stroke-width:1.4;stroke-linecap:round;stroke-dasharray:1.5 14;animation:tmd 1.4s linear infinite;opacity:calc(var(--int,.3)*.9)}
+.tm-d{fill:none;stroke:#fff;stroke-width:1.4;stroke-linecap:round;stroke-dasharray:1.5 14;animation:tmd 1.4s linear infinite;animation-play-state:paused;opacity:calc(var(--int,.3)*.9)}.tm-map.s1 .tm-d{animation-play-state:running}
 @keyframes tmd{to{stroke-dashoffset:-15.5}}
 .tm-hit{fill:none;stroke:transparent;stroke-width:14;pointer-events:stroke;cursor:help}
 .tm-hit:hover+*{}
 .tm-tr.dim{opacity:.12}
 .tm-b{fill:#fff}
-.tm-b.t1{opacity:calc((var(--int,.3) - .3)*4)}.tm-b.t2{opacity:calc((var(--int,.3) - .6)*5)}
-.tm-st{stroke:#000;stroke-width:.8;animation:tmst var(--sp,3s) ease-in-out infinite;transform-box:fill-box;transform-origin:center;cursor:help}
+.tm-b.t1,.tm-b.t2{display:none}.tm-map.s1 .tm-b.t1{display:inline}.tm-map.s2 .tm-b.t2{display:inline}
+.tm-st{stroke:#000;stroke-width:.8;cursor:help}.tm-st.p{animation:tmst var(--sp,3s) ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 @keyframes tmst{0%,100%{transform:scale(1)}50%{transform:scale(1.9)}}
 .tm-st.dim{opacity:.15}
 .tm-kl{font:700 15px var(--sans);fill:#ffd9a0;letter-spacing:3px;paint-order:stroke;stroke:#000;stroke-width:3px}
@@ -140,7 +140,7 @@ function buildTM(){
   B.tr.forEach((t,i)=>{ const c=FCOL[t.f]||"#fff"; glow+=`<path class="tm-g" stroke="${c}" d="${t.d}"/>`; lines+=`<path id="tmp${i}" class="tm-l tm-tr" data-i="${i}" stroke="${c}" d="${t.d}"/>`; dash+=`<path class="tm-d" d="${t.d}" style="animation-duration:${(1.1+i*.07).toFixed(2)}s"/>`; hit+=`<path class="tm-hit" data-i="${i}" d="${t.d}"/>`;
     const n=Math.max(2,Math.round(t.km/2.2)); for(let j=0;j<n;j++){ const dur=(t.km*1.05+4).toFixed(1), rev=j%2?` keyPoints="1;0" keyTimes="0;1" calcMode="linear"`:""; buses+=`<circle class="tm-b t${j%3}" r="2.5"><animateMotion dur="${dur}s" begin="${(-rnd()*dur).toFixed(1)}s" repeatCount="indefinite"${rev}><mpath href="#tmp${i}"/></animateMotion></circle>`; } });
   const ken=B.loc.find(l=>l.n==="KENNEDY"), nums=(ken.d.match(/-?\d+\.?\d*/g)||[]).map(Number); let kx=0,ky=0,kn=0; for(let i=0;i+1<nums.length;i+=2){ kx+=nums[i]; ky+=nums[i+1]; kn++; } kx/=kn; ky/=kn;
-  const stations=B.st.map((s,i)=>`<circle class="tm-st" cx="${s[0]}" cy="${s[1]}" r="2.1" fill="${TCOL[s[3]]||"#fff"}" data-t="${s[3]}" data-n="${s[2].replace(/"/g,"")}" style="animation-delay:${(-(i%17)*.2).toFixed(1)}s"/>`).join("");
+  const stations=B.st.map((s,i)=>`<circle class="tm-st${i%3===0?" p":""}" cx="${s[0]}" cy="${s[1]}" r="2.1" fill="${TCOL[s[3]]||"#fff"}" data-t="${s[3]}" data-n="${s[2].replace(/"/g,"")}" style="animation-delay:${(-(i%17)*.2).toFixed(1)}s"/>`).join("");
   mapEl.innerHTML=`<svg viewBox="0 0 ${B.w} ${B.h}" preserveAspectRatio="xMidYMid slice"><g class="tm-world">
      <g>${B.loc.map(l=>`<path class="tm-loc${l.n==="KENNEDY"?" ken":""}" d="${l.d}"/>`).join("")}</g>
      <g>${glow}</g><g>${lines}</g><g>${dash}</g><g>${buses}</g><g>${stations}</g>
@@ -153,10 +153,10 @@ function buildTM(){
     <div class="tm-info" id="tmI"><b>Pasa el mouse</b>por una línea o una estación.</div>
     <div class="note">Datos reales: trazados y estaciones troncales de TransMilenio (datos abiertos) y localidades de Bogotá. El ritmo según la hora es una ilustración, no son cifras.</div>`;
   const wrap=pp, info=$("#tmI");
-  const setH=h=>{ tmHour=h; const i=intensity(h); wrap.style.setProperty("--int",i.toFixed(3)); wrap.style.setProperty("--amp",(.006+i*.016).toFixed(4)); wrap.style.setProperty("--sp",(3.6-i*2.3).toFixed(2)+"s"); const hh=Math.floor(h)%24, mm=Math.floor((h%1)*60); $("#tmT").textContent=String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0"); $("#tmP").textContent=phase(h%24); $("#tmR").value=h%24; };
+  const setH=h=>{ tmHour=h; const i=intensity(h); mapEl.classList.toggle("s1",i>.35); mapEl.classList.toggle("s2",i>.65); wrap.style.setProperty("--int",i.toFixed(3)); wrap.style.setProperty("--amp",(.006+i*.016).toFixed(4)); wrap.style.setProperty("--sp",(3.6-i*2.3).toFixed(2)+"s"); const hh=Math.floor(h)%24, mm=Math.floor((h%1)*60); $("#tmT").textContent=String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0"); $("#tmP").textContent=phase(h%24); $("#tmR").value=h%24; };
   $("#tmR").oninput=e=>{ tmPlay=false; $("#tmPl").innerHTML=icon("Play",2.2); setH(+e.target.value); };
   $("#tmPl").onclick=()=>{ tmPlay=!tmPlay; $("#tmPl").innerHTML=icon(tmPlay?"Pause":"Play",2.2); };
-  let last=performance.now(); const loop=t=>{ if(cur!=="tm") return; const dt=(t-last)/1000; last=t; if(tmPlay){ tmHour=(tmHour+dt*.9)%24; setH(tmHour); } raf=requestAnimationFrame(loop); }; setH(tmHour); raf=requestAnimationFrame(loop);
+  let last=performance.now(), lastSet=0; const loop=t=>{ if(cur!=="tm") return; const dt=(t-last)/1000; last=t; if(tmPlay){ tmHour=(tmHour+dt*.9)%24; if(t-lastSet>110){ lastSet=t; setH(tmHour); } } raf=requestAnimationFrame(loop); }; setH(tmHour); raf=requestAnimationFrame(loop);
   const showTr=i=>{ const t=B.tr[i]; info.innerHTML=`<b>Trazado troncal · fase ${t.f}</b>${t.o} → ${t.e}<br><small>${t.km.toFixed(1)} km</small>`; mapEl.querySelectorAll(".tm-tr").forEach((p,j)=>p.classList.toggle("dim",j!==i)); };
   mapEl.querySelectorAll(".tm-hit").forEach(h=>{ h.onmouseenter=()=>showTr(+h.dataset.i); h.onmouseleave=()=>{ mapEl.querySelectorAll(".tm-tr").forEach(p=>p.classList.remove("dim")); }; });
   mapEl.querySelectorAll(".tm-st").forEach(s=>{ s.onmouseenter=()=>{ info.innerHTML=`<b>Estación ${s.dataset.n}</b>Troncal: ${s.dataset.t}`; }; });
@@ -179,7 +179,7 @@ function openClusters(){
     c.lines=c.nodes.map((n,i)=>{ const l=document.createElementNS("http://www.w3.org/2000/svg","line"); l.setAttribute("stroke",c.col); l.setAttribute("stroke-opacity",".35"); l.setAttribute("stroke-width","1"); ed.appendChild(l); const j=(i+1+Math.floor(rnd()*4))%c.nodes.length; return [l,j]; });
     const hub=document.createElementNS("http://www.w3.org/2000/svg","circle"); hub.setAttribute("r","9"); hub.setAttribute("fill",c.col); hub.setAttribute("stroke","#fff"); hub.setAttribute("stroke-width","2"); nd.appendChild(hub); c.hub=hub;
     g.onmouseenter=()=>G.forEach((o,k)=>o.classList.toggle("dim",k!==ci)); g.onmouseleave=()=>G.forEach(o=>o.classList.remove("dim")); });
-  const loop=t=>{ if(cur!=="cl") return; const s=t/1000;
+  let lastF=0; const loop=t=>{ if(cur!=="cl") return; if(t-lastF<32){ raf=requestAnimationFrame(loop); return; } lastF=t; const s=t/1000;
     clusters.forEach(c=>{ const pts=c.nodes.map((n,i)=>[c.x+n.bx+Math.sin(s*n.w+n.ph)*n.am, c.y+n.by+Math.cos(s*n.w*.8+n.ph)*n.am]); c.els.forEach((el,i)=>{ el.setAttribute("cx",pts[i][0].toFixed(1)); el.setAttribute("cy",pts[i][1].toFixed(1)); }); c.lines.forEach(([l,j],i)=>{ l.setAttribute("x1",pts[i][0].toFixed(1)); l.setAttribute("y1",pts[i][1].toFixed(1)); l.setAttribute("x2",pts[j][0].toFixed(1)); l.setAttribute("y2",pts[j][1].toFixed(1)); }); c.hub.setAttribute("cx",c.x); c.hub.setAttribute("cy",c.y); c.hub.setAttribute("r",(9+Math.sin(s*2+c.x)*1.8).toFixed(1)); });
     brs.forEach(l=>{ const a=clusters[+l.dataset.a],b=clusters[+l.dataset.b]; l.setAttribute("x1",a.x); l.setAttribute("y1",a.y); l.setAttribute("x2",b.x); l.setAttribute("y2",b.y); });
     flows.forEach(f=>{ f.t=(f.t+(1/60)*f.sp)%1; const a=clusters[f.a],b=clusters[f.b],u=f.dir>0?f.t:1-f.t; f.el.setAttribute("cx",(a.x+(b.x-a.x)*u).toFixed(1)); f.el.setAttribute("cy",(a.y+(b.y-a.y)*u).toFixed(1)); });
