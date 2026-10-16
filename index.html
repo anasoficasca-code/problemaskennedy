@@ -948,7 +948,7 @@ if(matchMedia("(pointer:fine)").matches){
 d3.select(stage).call(zoom.transform,rootT());
 refresh(null); updateVP();
 const hs=location.hash;
-if(hs==="#todo") expandAll(); else if(hs.startsWith("#n=")&&KK[hs.slice(3)]) goNode(KK[hs.slice(3)]);
+if(hs==="#todo") expandAll(); else if(hs==="#hist"){ KK.root.open=true; KK.may.open=true; refresh(null); setTimeout(()=>{ select(KK.hig); openHist(); },500); } else if(hs.startsWith("#n=")&&KK[hs.slice(3)]) goNode(KK[hs.slice(3)]);
 </script>
 </body>
 </html>
