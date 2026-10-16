@@ -806,7 +806,8 @@ function runProp(n){ const start=n||sel||DATA; introStage=2; if(!DATA.open){ DAT
 $("#bProp").onclick=()=>runProp();
 
 /* ============ Evolución histórica: panel pequeño sobre Higiene estatal (solo 1900 y 1972) ============ */
-const HURL="https://anasoficasca-code.github.io/humedalburro/problematicas.html";
+const HURL="https://anasoficasca-code.github.io/humedalburro/problematicas.html";   // enlace "ver la página completa"
+const HEMB="https://anasoficasca-code.github.io/problemaskennedy/axo.html";          // la misma axonometría, en versión ligera (axo.html)
 const CAP={ 1900:`<b>1900 · Antes de Kennedy</b> — solo el predio: el terreno donde luego se levantaría Corabastos, junto a la laguna El Tintal.`,
             1972:`<b>20 de julio de 1972 · Se inaugura Corabastos</b> — ya construido, con su predio de unos 420.000 m².` };
 const HF_ERA={1900:1972,1972:1988};   // época real de la axonometría que se muestra detrás de cada botón
@@ -841,7 +842,7 @@ function hpBuild(){
   hpSetYear(1900);
 }
 function hpSetYear(y){ hpYear=y; const hp=$("#hp"); hp.querySelectorAll(".hd").forEach(b=>b.classList.toggle("on",+b.dataset.y===y)); $("#hcap").innerHTML=CAP[y]; hfYear(y); hfWait(); }
-function preloadHist(){ hpBuild(); const hf=$("#hf"); if(!hf.dataset.l){ hf.dataset.l="1"; hf.src=HURL; } }
+function preloadHist(){ hpBuild(); const hf=$("#hf"); if(!hf.dataset.l){ hf.dataset.l="1"; hf.src=HEMB; } }
 function placeHP(){
   if(!hpOpen||isMobile()) return;
   const hp=$("#hp"), hv=hp.querySelector(".hv"), r=KK.hig.el.getBoundingClientRect();
@@ -984,17 +985,18 @@ function wireSearch(inp,resBox){
 }
 wireSearch($("#q"),$("#res")); wireSearch($("#mq"),$("#mres"));
 
-/* Precarga ligera: solo DESCARGA (sin ejecutar nada) los archivos de la axonometría y de los paneles cuando el navegador está libre.
-   Los datos pesados (terreno y edificios) se guardan en la caché para que la axonometría no tenga que esperar la red. */
+/* Precarga en segundo plano (solo escritorio, sin ahorro de datos): primero DESCARGA los archivos y los guarda en caché;
+   luego prepara la axonometría con el dibujo en pausa. Todo ocurre mientras se habla en el inicio, antes de llegar a Higiene estatal. */
 addEventListener("load",()=>setTimeout(()=>{ const go=async()=>{
   const B="https://anasoficasca-code.github.io/humedalburro/";
   ["https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js",B+"assets/vendor/polygon-clipping.umd.min.js?v=1",B+"modulo-08-3d.js?v=280","assets/pops.js","assets/bogota-data.js","assets/plano-kennedy.jpg"]
     .forEach(u=>{ const l=document.createElement("link"); l.rel="prefetch"; l.href=u; document.head.appendChild(l); });
   if(isMobile()||(navigator.connection&&(navigator.connection.saveData||/2g/.test(navigator.connection.effectiveType||"")))) return;
-  const DATA=["kennedy_buildings.json","kennedy_terreno.json","kennedy_trees_real.json","kennedy_manzanas.json","kennedy_parques.json","kennedy_water_bodies.json","kennedy_net.json","kennedy_facades.json","kennedy_intersecciones.json","arbol_real4.png","textura_pasto_pastel.jpg","textura_via.jpg","textura_agua_clara.jpg","textura_agua_clara_relieve.jpg"];
-  for(const f of DATA){ try{ const r=await fetch(B+"assets/"+f,{cache:"force-cache",priority:"low"}); await r.arrayBuffer(); }catch(e){} }
+  const W=[["assets/lite/buildings.json"],[B+"assets/kennedy_trees_real.json"],[B+"assets/kennedy_manzanas.json"],[B+"assets/kennedy_parques.json"],[B+"assets/kennedy_water_bodies.json"],[B+"assets/arbol_real4.png"],[B+"assets/textura_pasto_pastel.jpg"],[B+"assets/textura_via.jpg"],[B+"assets/textura_agua_clara.jpg"],[B+"assets/textura_agua_clara_relieve.jpg"],[B+"assets/pato.png"]];
+  for(const [u] of W){ try{ const r=await fetch(u,{cache:"force-cache",priority:"low"}); await r.arrayBuffer(); }catch(e){} }
+  try{ preloadHist(); }catch(e){}
   };
-  if("requestIdleCallback" in window) requestIdleCallback(go,{timeout:6000}); else go(); },1800));
+  if("requestIdleCallback" in window) requestIdleCallback(go,{timeout:6000}); else go(); },2500));
 
 /* ============ Plano animado (PDF de Kennedy) al tocar Dependencia alimentaria ============ */
 const PL={w:912,h:1157,T:[525,725],src:"assets/plano-kennedy.jpg"};   // T = punto de Corabastos, movido hacia "Humedal La Vaca"
