@@ -719,7 +719,7 @@ all.forEach(n=>{
     if(n===DATA&&introStage===0&&!isMobile()){ introStage=1; ripple(n); select(n); $("#hint").innerHTML=icon("MousePointerClick",2)+"Haz clic otra vez en la Fragmentación Territorial para ver los 3 problemas"; refresh(null); zoomTo(all,2400); return; }
     if(n===DATA&&introStage===1) introStage=2;
     if(n.key==="may") setTimeout(()=>{ try{ preloadHist(); }catch(e){} },1500);
-    if(!inHig(n)) closeHist(); if(n.key!=="dep") closePlano(); popClick(n); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig"){ if(hpOpen) closeHist(); else setTimeout(openHist,300); }
+    const hk=(n.key==="hig"||n.key==="dens")?n.key:null, wasH=!!hk&&hpOpen&&hpMode===hk; if(!inHig(n)) closeHist(); if(n.key!=="dep") closePlano(); popClick(n); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(hk){ if(wasH) closeHist(); else setTimeout(()=>openHist(hk),300); }
     if(n.key==="dep"){ if(plOpen) closePlano(); else setTimeout(openPlano,300); } });
   e.addEventListener("mouseenter",()=>focusLine(n)); e.addEventListener("mouseleave",()=>focusLine(null));
   e.addEventListener("mousemove",ev=>{ const r=e.getBoundingClientRect(); e.style.setProperty("--mx",((ev.clientX-r.left)/T.k)+"px"); e.style.setProperty("--my",((ev.clientY-r.top)/T.k)+"px"); });
@@ -771,7 +771,7 @@ function focusLine(n){
     const xch=n.xs.length?`<div class="xchips">${n.xs.map(x=>{ const o=x.s===n?x.t:x.s, sym=!x.dir?"—":(x.s===n?"→":"←"); return `<span class="xchip" data-k="${o.key}" style="--c:${o.color}"><b>${sym}</b>${o.s}</span>`; }).join("")}</div>`:"";
     d.innerHTML=`<div class="mc"><div class="mt">${icon(n.i)}</div><div class="mx"><span class="mid">VAR ${n.code}${xb}</span><span class="ml">${n.t}</span>${xch}</div><div class="mr">${n.kids.length?`<span class="mcnt"><span>${n.kids.length}</span>${icon("ChevronRight",2.4)}</span>`:""}<button class="mi" aria-label="Detalles">${icon("Info",2)}</button></div></div>${n.kids.length?`<div class="mk"><div class="mki"></div></div>`:""}`;
     n.mel=d;
-    d.querySelector(".mc").addEventListener("click",()=>{ select(n); if(n.kids.length) toggle(n); else openSheet(n); popClick(n); if(n.key==="hig") setTimeout(openHist,800); if(n.key==="dep") setTimeout(openPlano,600); });
+    d.querySelector(".mc").addEventListener("click",()=>{ select(n); if(n.kids.length) toggle(n); else openSheet(n); popClick(n); if(n.key==="hig"||n.key==="dens") setTimeout(()=>openHist(n.key),800); if(n.key==="dep") setTimeout(openPlano,600); });
     d.querySelector(".mi").addEventListener("click",ev=>{ ev.stopPropagation(); select(n); openSheet(n); });
     d.querySelectorAll(".xchip").forEach(c=>c.addEventListener("click",ev=>{ ev.stopPropagation(); goNode(KK[c.dataset.k]); }));
     if(n.kids.length){ const box=d.querySelector(".mki"); n.kids.forEach(k=>box.appendChild(mkm(k))); }
@@ -871,10 +871,20 @@ $("#bProp").onclick=()=>runProp();
 /* ============ Evolución histórica: panel pequeño sobre Higiene estatal (solo 1900 y 1972) ============ */
 const HURL="https://anasoficasca-code.github.io/humedalburro/problematicas.html";   // enlace "ver la página completa"
 const HEMB="https://anasoficasca-code.github.io/problemaskennedy/axo.html";          // la misma axonometría, en versión ligera (axo.html)
-const CAP={ 1900:`<b>1900 · Antes de Kennedy</b> — solo el predio: el terreno donde luego se levantaría Corabastos, junto a la laguna El Tintal.`,
-            1972:`<b>20 de julio de 1972 · Se inaugura Corabastos</b> — ya construido, con su predio de unos 420.000 m².` };
-const HF_ERA={1900:1972,1972:1988};   // época real de la axonometría que se muestra detrás de cada botón
-let hpOpen=false, hpYear=1900, hpBuilt=false;
+const HMODES={
+ hig:{ title:"Evolución histórica · axonometría", sub:"Del territorio al mercado mayorista", em:"72 años",
+   tl:[{y:1900,b:"1900",s:"Antes de Kennedy"},{y:1972,b:"1972",s:"Corabastos"}],
+   era:{1900:1972,1972:1988},   // época real de la axonometría que se muestra detrás de cada botón
+   cap:{ 1900:`<b>1900 · Antes de Kennedy</b> — solo el predio: el terreno donde luego se levantaría Corabastos, junto a la laguna El Tintal.`,
+         1972:`<b>20 de julio de 1972 · Se inaugura Corabastos</b> — ya construido, con su predio de unos 420.000 m².` } },
+ dens:{ title:"Ciudad Techo · origen de Kennedy", sub:"De la periferia al crecimiento en altura", em:"",
+   tl:[{y:1956,b:"1956",s:"Aeropuerto de Techo"},{y:1961,b:"1961",s:"Ciudad Techo"},{y:2024,b:"Hoy",s:"En altura"}],
+   era:{1956:1956,1961:1972,2024:2024},
+   cap:{ 1956:`<b>1956 · Antiguo Aeropuerto de Techo</b> — la pista y las vías sobre los terrenos donde después se levantaría Ciudad Techo.`,
+         1961:`<b>1961 · Nace Ciudad Techo</b> — el origen de Kennedy: se masifica la vivienda en la periferia mientras la oferta laboral se centraliza. <small>(Vista de 1972, ya construida.)</small>`,
+         2024:`<b>Hoy · densificación residencial en altura</b> — la huella construida actual de Kennedy: la vivienda se concentra donde ya no queda suelo.` } }
+};
+let CAP=HMODES.hig.cap, HF_ERA=HMODES.hig.era, hpMode="hig";let hpOpen=false, hpYear=1900, hpBuilt=false;
 // misma página del proyecto (mismo dominio): se oculta su interfaz y queda solo la vista axonométrica 3D
 const HF_CSS=`.hud-title,.ep,.controls-bar,.tools-panel,.left-poly-panel,.tf,.tree-info,#marcadoresMapa,#marcasCierre,.status-overlay,#eraBadge{display:none!important}
 html,body{background:#050505!important;overflow:hidden!important}
@@ -891,24 +901,29 @@ function hfGate(){ try{ const w=$("#hf").contentWindow; if(!w||w.__gate) return;
 function hfPause(){ try{ const w=$("#hf").contentWindow; if(w&&w.__gate) w.__paused=true; }catch(e){} }
 function hfResume(){ try{ const w=$("#hf").contentWindow; if(w&&w.__gate){ w.__paused=false; const q=w.__held.splice(0); q.forEach(cb=>w.requestAnimationFrame(cb)); } }catch(e){} }
 function hpBuild(){
-  if(hpBuilt) return; hpBuilt=true; const hp=$("#hp"), n=KK.hig;
-  hp.style.setProperty("--c",n.color); hp.style.setProperty("--ink",ink(n.color));
-  hp.innerHTML=`<div class="hh"><i class="hi">${icon("History",2)}</i><div><b>Evolución histórica · axonometría</b><span>Del territorio al mercado mayorista</span></div><button class="hx" aria-label="Cerrar">${icon("X",2.2)}</button></div>
-   <div class="htl"><button class="hd on" data-y="1900"><b>1900</b><small>Antes de Kennedy</small></button><span class="hln"><em>72 años</em></span><button class="hd" data-y="1972"><b>1972</b><small>Corabastos</small></button></div>
+  if(hpBuilt) return; hpBuilt=true; const hp=$("#hp");
+  hp.innerHTML=`<div class="hh"><i class="hi">${icon("History",2)}</i><div><b id="hTitle"></b><span id="hSub"></span></div><button class="hx" aria-label="Cerrar">${icon("X",2.2)}</button></div>
+   <div class="htl" id="htl"></div>
    <div class="hv"><iframe id="hf" title="Axonometría del territorio" allow="fullscreen"></iframe><div class="hload">${icon("Box",2)}Cargando axonometría…</div></div>
    <div class="hcap" id="hcap"></div>
    <a class="hl" href="${HURL}" target="_blank" rel="noopener">${icon("ExternalLink",2)}Ver la página completa</a>`;
   hp.querySelector(".hx").onclick=closeHist;
-  hp.querySelectorAll(".hd").forEach(b=>b.onclick=()=>hpSetYear(+b.dataset.y));
   const hf=$("#hf"); hf.addEventListener("mouseenter",()=>document.body.classList.add("cur-off")); hf.addEventListener("mouseleave",()=>document.body.classList.remove("cur-off"));
   hf.addEventListener("load",()=>{ hfInject(); hfGate(); hfYear(hpYear); hfWait(); setTimeout(()=>{ hfInject(); hfGate(); },300); });
-  hpSetYear(1900);
+  hpSetMode(hpMode);
+}
+function hpSetMode(m){
+  const M=HMODES[m], n=KK[m==="dens"?"dens":"hig"], hp=$("#hp"); hpMode=m; CAP=M.cap; HF_ERA=M.era;
+  hp.style.setProperty("--c",n.color); hp.style.setProperty("--ink",ink(n.color));
+  $("#hTitle").textContent=M.title; $("#hSub").textContent=M.sub;
+  $("#htl").innerHTML=M.tl.map((x,k)=>`<button class="hd${k?"":" on"}" data-y="${x.y}"><b>${x.b}</b><small>${x.s}</small></button>`).join(`<span class="hln">${M.em?`<em>${M.em}</em>`:""}</span>`);
+  hp.querySelectorAll(".hd").forEach(b=>b.onclick=()=>hpSetYear(+b.dataset.y)); hpSetYear(M.tl[0].y);
 }
 function hpSetYear(y){ hpYear=y; const hp=$("#hp"); hp.querySelectorAll(".hd").forEach(b=>b.classList.toggle("on",+b.dataset.y===y)); $("#hcap").innerHTML=CAP[y]; hfYear(y); hfWait(); }
 function preloadHist(){ hpBuild(); const hf=$("#hf"); if(!hf.dataset.l){ hf.dataset.l="1"; hf.src=HEMB; } }
 function placeHP(){
   if(!hpOpen||isMobile()) return;
-  const hp=$("#hp"), hv=hp.querySelector(".hv"), r=KK.hig.el.getBoundingClientRect();
+  const hp=$("#hp"), hv=hp.querySelector(".hv"), r=KK[hpMode].el.getBoundingClientRect();
   const chrome=hp.offsetHeight-hv.offsetHeight, avail=r.top-18-74-chrome;
   hv.style.height=Math.max(220,Math.min(560,avail))+"px";                 // la axonometría ocupa todo el espacio libre de arriba
   const pw=hp.offsetWidth, ph=hp.offsetHeight; let left=r.left+r.width/2-pw/2; left=Math.max(12,Math.min(innerWidth-pw-12,left));
@@ -917,12 +932,12 @@ function placeHP(){
 }
 function inHig(n){ for(let p=n;p;p=p.parent) if(p===KK.hig) return true; return false; }
 function frameHigRow(){ // toda la fila de Higiene estatal (hasta Monoexportación) queda ABAJO y completa
-  const n=KK.hig, ds=[n,...descendants(n)], x0=Math.min(...ds.map(d=>d.x)), x1=Math.max(...ds.map(d=>d.x+d.w));
+  const n=KK[hpMode], ds=hpMode==="hig"?[n,...descendants(n)]:[n], x0=Math.min(...ds.map(d=>d.x)), x1=Math.max(...ds.map(d=>d.x+d.w));
   const L=padL(), k=Math.max(.3,Math.min((W-L-30)/(x1-x0),1)), tx=L+(W-L-30-(x1-x0)*k)/2-x0*k, ty=(H-92)-n.y*k;
   goto(d3.zoomIdentity.translate(tx,ty).scale(k),1400);
 }
-function openHist(){
-  preloadHist(); hpOpen=true; hpSetYear(1900); document.body.classList.add("hp-open"); $("#hp").classList.add("show"); hfResume();
+function openHist(mode){
+  mode=mode||"hig"; if(window.POPS) POPS.close(); preloadHist(); hpSetMode(mode); hpOpen=true; document.body.classList.add("hp-open"); $("#hp").classList.add("show"); hfResume();
   if(!isMobile()) frameHigRow();
   placeHP(); requestAnimationFrame(placeHP); setTimeout(placeHP,700); setTimeout(placeHP,1500);
 }
@@ -946,7 +961,7 @@ const STEPS=[
    x:"Para entender el origen de este modelo, debemos devolvernos a 1972, cuando se inaugura la central de Corabastos para responder a las crisis epidémicas provocadas por la descomposición de alimentos en la antigua Plaza España. La falta de tecnología para conservar alimentos obedecía a una infraestructura deficiente por la industrialización tardía del país, cuya causa de fondo fue la monoexportación cafetera: un modelo centrado en el café sin diversificar la producción ni planificar el abastecimiento." },
  { w:"RAÍCES", t:"Por qué Bogotá depende de afuera", ic:"Sprout", g:1, net:["exp","crec","mod","perd","dep"], sel:"perd", prop:["exp"], panel:"pop:exp",
    x:"Adicionalmente, esta concentración se sostiene porque Bogotá mantiene una profunda dependencia alimentaria, derivada de la pérdida de producción agrícola local cuando resultó más rentable transformar la tierra rural en suelo urbano, proceso acelerado por la expulsión violenta de campesinos." },
- { w:"SATURACIÓN", t:"Concentración comercial y logística", ic:"Gauge", g:1, net:["may","dep","trans","no2"], sel:"may", prop:["may"],
+ { w:"SATURACIÓN", t:"Concentración comercial y logística", ic:"Gauge", g:1, net:["may","dep","trans","no2"], sel:"may", prop:["may"], panel:"pop:may",
    x:"Para medir cómo esta concentración satura el entorno, evaluamos los mapas multitemporales de 2020 y 2026 del indicador de Concentración Comercial y Logística. Al comparar ambos periodos, se evidencia una clara expansión y densificación de los núcleos comerciales desde Corabastos hacia los corredores residenciales colindantes.",
    ind:[{n:"Concentración Comercial y Logística",c:["Intensidad comercial","Impermeabilización del suelo","Emisión térmica infrarroja"],v:"Mapas 2020 y 2026"}] },
  { w:"MOVILIDAD", t:"Sobrecarga de transporte", ic:"Bus", g:1, net:["cult","sinc","desp","trans"], sel:"trans", prop:["cult"], panel:"pop:trans",
@@ -954,24 +969,24 @@ const STEPS=[
  { w:"EMPLEO", t:"Clústeres de empleo", ic:"Briefcase", g:1, net:["trans","conc","clust","monoc","econag"], sel:"clust", prop:["conc"], panel:"pop:clust",
    x:"Sumado a esto, existe una alta concentración espacial de clústeres de empleo debido a la expansión monocéntrica de Bogotá, donde el origen de Kennedy desde Ciudad Techo en 1961 masificó la función residencial en la periferia mientras la oferta laboral se centralizaba. Este fenómeno fue impulsado por economías de aglomeración que concentran empresas para reducir costos, obligando a viajes pendulares que sobrecargan las vías.",
    ind:[{n:"Presión sobre la Movilidad Vehicular",c:["Emisiones de dióxido de nitrógeno","Densidad de la malla arterial","Accidentalidad"],v:"Evalúa el colapso vial"}] },
- { w:"VIVIENDA", t:"Densificación y especulación", ic:"Building2", g:1, net:["conc","dens","esp","esc","plan"], sel:"dens", prop:["conc"],
+ { w:"VIVIENDA", t:"Densificación y especulación", ic:"Building2", g:1, net:["conc","dens","esp","esc","plan"], sel:"dens", prop:["conc"], panel:"hist:dens",
    x:"Asimismo, la densificación en altura y la especulación inmobiliaria concentran la residencia. Finalmente, esto es alimentado por una planificación urbana orientada al mercado y no a la descentralización, donde la infraestructura construida incentiva más clústeres y cierra un ciclo que fragmenta a Kennedy.",
    ind:[{n:"Conflicto Vivienda-Actividad",c:["Densidad habitacional","× comercio e industria pesada"],v:"Fricción espacial por el mismo espacio público y red de transporte"}] },
- { w:"RESIDUOS", t:"Saturación de los residuos", ic:"Trash2", g:2, net:["res","desc","san","aguasres","cargas"], sel:"res", prop:["res","desc","aguasres"],
+ { w:"RESIDUOS", t:"Saturación de los residuos", ic:"Trash2", g:2, net:["res","desc","san","aguasres","cargas"], sel:"res", prop:["res","desc","aguasres"], panel:"pop:res",
    x:"Por otro lado, la saturación de residuos desencadena fragmentación territorial. En los andenes, la acumulación de desechos se intensifica por ventas informales y su descomposición colapsa el saneamiento local, incrementando aguas residuales y cargas contaminantes." },
- { w:"AGUA", t:"Del desecho al humedal", ic:"Droplets", g:2, net:["aguasres","san","cargas","calagua","eco"], sel:"calagua", prop:["aguasres"],
+ { w:"AGUA", t:"Del desecho al humedal", ic:"Droplets", g:2, net:["aguasres","san","cargas","calagua","eco"], sel:"calagua", prop:["aguasres"], panel:"pop:calagua",
    x:"El diagrama causal de este problema sintetiza esta degradación en tres niveles: generación masiva de desechos, colapso de la red de alcantarillado e impacto hídrico por escorrentía, donde los niveles de DBO5, nitrógeno y fósforo superan la capacidad de los humedales.",
    chips:["Generación masiva de desechos","Colapso de la red de alcantarillado","Impacto hídrico por escorrentía · DBO5, nitrógeno y fósforo"] },
- { w:"SOPORTE ECOLÓGICO", t:"Soporte ecológico", ic:"Globe", g:3, net:["plan","supcons","imperm","frag","perdveg","hab"], sel:"eco", prop:["plan"],
+ { w:"SOPORTE ECOLÓGICO", t:"Soporte ecológico", ic:"Globe", g:3, net:["plan","supcons","imperm","frag","perdveg","hab"], sel:"eco", prop:["plan"], panel:"pop:frag",
    x:"Esto conecta con la degradación del soporte ecológico. Al analizar los mapas multitemporales de 2020 y 2026, observamos la desaparición de corredores ecológicos que conectaban la trama urbana con el humedal, debido a una planificación que prioriza la rentabilidad del suelo sobre la ecología, impulsando la pavimentación masiva.",
    ind:[{n:"Soporte Ecológico",c:["Corredores ecológicos","Conexión trama urbana – humedal"],v:"Mapas 2020 y 2026"}] },
- { w:"CALOR", t:"Islas de calor", ic:"Mountain", g:3, net:["supcons","suelo","imperm","lluvia","eco"], sel:"imperm", prop:["supcons"],
+ { w:"CALOR", t:"Islas de calor", ic:"Mountain", g:3, net:["supcons","suelo","imperm","lluvia","eco"], sel:"imperm", prop:["supcons"], panel:"pop:supcons",
    x:"Como consecuencia, el indicador de Islas de Calor muestra para 2026 una expansión drástica de la mancha térmica al perder la capacidad de enfriamiento por evapotranspiración.",
    ind:[{n:"Islas de Calor",c:["Mancha térmica 2020 – 2026","Evapotranspiración perdida"],v:"Mapas 2020 y 2026"}] },
- { w:"AIRE", t:"Calidad del aire", ic:"Wind", g:3, net:["trans","no2","aire","eco"], sel:"aire", prop:["trans"],
+ { w:"AIRE", t:"Calidad del aire", ic:"Wind", g:3, net:["trans","no2","aire","eco"], sel:"aire", prop:["trans"], panel:"pop:no2",
    x:"Por último, la actividad industrial y vehicular deteriora la calidad del aire; el indicador de Presión sobre el Aire demuestra cómo la acumulación de dióxido de nitrógeno, monóxido de carbono y metano supera la capacidad de dispersión del ecosistema.",
    ind:[{n:"Presión sobre el Aire",c:["Dióxido de nitrógeno","Monóxido de carbono","Metano"],v:"Supera la capacidad de dispersión del ecosistema"}] },
- { w:"METABOLISMO", t:"Saturación del metabolismo territorial", ic:"Droplet", g:3, net:["imperm","lluvia","calagua","aire","biodiv","eco"], sel:"eco", prop:["imperm","calagua","aire","biodiv"],
+ { w:"METABOLISMO", t:"Saturación del metabolismo territorial", ic:"Droplet", g:3, net:["imperm","lluvia","calagua","aire","biodiv","eco"], sel:"eco", prop:["imperm","calagua","aire","biodiv"], panel:"pop:imperm",
    x:"El diagrama causal de la saturación del metabolismo territorial sintetiza cómo este desborde impacta la cuenca del Humedal El Burro en tres capas.",
    chips:["Pérdida de regulación hídrica por impermeabilización","Colapso de sumideros ambientales por escorrentía e islas de calor","Deterioro ecológico acumulado: menor resiliencia y mayor vulnerabilidad ambiental"] },
  { w:"RESPUESTA", t:"La respuesta social", ic:"Users", g:0, net:["root","may","res","eco"], sel:"root", prop:["root"],
@@ -1061,16 +1076,16 @@ function sqScene(){
   $("#sqW").classList.remove("show");
   const sents=s.x.split(/(?<=\.)\s+/), chips=s.chips?`<div class="nchips">${s.chips.map((t,k)=>`<div style="--k:${k}"><b>0${k+1}</b><span>${t}</span></div>`).join("")}</div>`:"";
   const ind=(s.ind||[]).map(d=>`<div class="nind"><h6>${icon("Gauge",2)}Indicador</h6><strong>${d.n}</strong>${d.c.map(x=>`<span>${x}</span>`).join("")}<em>${d.v}</em></div>`).join("");
-  const pv=hasP?`<button class="nv" id="sqV">${icon("Play",2)}${s.panel==="hist"?"Ver axonometría 1900 → 1972":"Ver animación"}</button>`:"";
+  const isH=hasP&&s.panel.startsWith("hist"), pv=hasP?`<button class="nv" id="sqV">${icon("Play",2)}${s.panel==="hist"?"Ver axonometría 1900 → 1972":s.panel==="hist:dens"?"Ver Ciudad Techo en la axonometría":"Ver animación"}</button>`:"";
   const S=$("#sqS"); S.innerHTML=`<div class="sq-txt"><span class="kk">${String(SQ.i+1).padStart(2,"0")} · ${s.w}</span><h2>${s.t}</h2>${sents.map((t,k)=>`<p style="--k:${k}">${t}</p>`).join("")}${chips}${ind}${pv}</div><div class="sq-dia">${sqDiagram(s)}</div>`;
   S.classList.toggle("hasp",hasP&&!mob); void S.offsetWidth; S.classList.add("show");
   $("#sqS").style.marginRight=""; const v=$("#sqV"); if(v) v.onclick=()=>{ SQ.play=false; clearTimeout(SQ.tm); sqFoot(); $("#sqB").className=""; sqPanel(s); };
-  if(hasP&&!mob&&s.panel!=="hist") sqAt(()=>sqPanel(s),900);
-  if(SQ.i===2||SQ.i===3) sqAt(()=>{ try{ preloadHist(); }catch(e){} },SQ.i===2?5000:300);
+  if(hasP&&!mob&&(!isH||($("#hf")&&$("#hf").dataset.l))) sqAt(()=>sqPanel(s),900);
+  if([2,3,6,7].includes(SQ.i)) sqAt(()=>{ try{ preloadHist(); }catch(e){} },SQ.i===2||SQ.i===6?5000:300);
   sqSched();
 }
 function sqFitP(){ if(isMobile()) return; const p=["#pl","#pp","#hp"].map(x=>$(x)).find(e=>e&&e.offsetWidth&&getComputedStyle(e).display!=="none"&&e.classList.contains("show")); if(p) $("#sqS").style.marginRight=(p.offsetWidth+44)+"px"; }
-function sqPanel(s){ if(s.panel==="plano") openPlano(); else if(s.panel==="hist"){ openHist(); sqAt(()=>hpSetYear(1972),5500); } else popClick(KK[s.panel.slice(4)]); [150,500,1200,2200].forEach(ms=>sqAt(sqFitP,ms)); }
+function sqPanel(s){ const p=s.panel; if(p==="plano") openPlano(); else if(p.startsWith("hist")){ const m=p==="hist:dens"?"dens":"hig"; openHist(m); HMODES[m].tl.slice(1).forEach((x,k)=>sqAt(()=>hpSetYear(x.y),5500+k*5500)); } else popClick(KK[p.slice(4)]); [150,500,1200,2200].forEach(ms=>sqAt(sqFitP,ms)); }
 function sqClose(){ SQ.on=false; sqClear(); document.body.classList.remove("sq-open"); }
 function sqOpen(){ SQ.play=true; closeInsp(); sqGo(0); }
 $("#bNar").onclick=sqOpen;
@@ -1128,8 +1143,8 @@ function applySelFocus(){
 }
 function focusOn(n){
   if(isMobile()) return;
-  if(hpOpen&&inHig(n)) return;            // con la axonometría abierta la cámara no se mueve: la fila de Higiene se queda abajo
-  if(n.key==="hig"&&!hpOpen) return;       // Higiene se encuadra sola con su panel
+  if(hpOpen&&((hpMode==="hig"&&inHig(n))||(hpMode==="dens"&&n===KK.dens))) return;            // con la axonometría abierta la cámara no se mueve: la fila de Higiene se queda abajo
+  if((n.key==="hig"||n.key==="dens")&&!hpOpen) return;       // Higiene se encuadra sola con su panel
   let changed=false; n.xs.forEach(x=>{ const o=x.s===n?x.t:x.s; if(!o.vis){ for(let p=o.parent;p;p=p.parent){ if(!p.open){ p.open=true; changed=true; } } } });
   if(changed) refresh(n);
   const partners=n.xs.map(x=>x.s===n?x.t:x.s);
@@ -1229,7 +1244,7 @@ function closePlano(){ plOpen=false; const pl=$("#pl"); pl.classList.remove("sho
 addEventListener("resize",plSize); addEventListener("keydown",e=>{ if(e.key==="Escape") closePlano(); });
 
 /* ============ Paneles visuales por tarjeta (assets/pops.js, se carga solo al necesitarlo) ============ */
-const POPKEYS={exp:1,crec:1,mod:1,perd:1,trans:1,desp:1,sinc:1,cult:1,clust:1};
+const POPKEYS={}; "exp crec mod perd trans desp sinc cult clust conc monoc econag res desc san aguasres cargas calagua imperm suelo lluvia supcons eco frag perdveg hab biodiv may aire no2 esp esc plan".split(" ").forEach(k=>POPKEYS[k]=1);
 let popsLoading=false;
 function loadPops(cb){ if(popsLoading) return; popsLoading=true; const s=document.createElement("script"); s.src="assets/pops.js"; s.onload=()=>{ popsLoading=false; cb(); }; document.head.appendChild(s); }
 function popClick(n){ if(window.POPS){ POPS.click(n.key); return; } if(POPKEYS[n.key]) loadPops(()=>POPS.click(n.key)); }
