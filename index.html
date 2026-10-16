@@ -877,7 +877,7 @@ const HMODES={
    era:{1900:1972,1972:1988},   // época real de la axonometría que se muestra detrás de cada botón
    cap:{ 1900:`<b>1900 · Antes de Kennedy</b> — solo el predio: el terreno donde luego se levantaría Corabastos, junto a la laguna El Tintal.`,
          1972:`<b>20 de julio de 1972 · Se inaugura Corabastos</b> — ya construido, con su predio de unos 420.000 m².` } },
- dens:{ title:"Ciudad Techo · origen de Kennedy", sub:"De la periferia al crecimiento en altura", em:"",
+ dens:{ title:"Ciudad Techo · origen de Kennedy", sub:"De la periferia al crecimiento en altura", em:"", start:1,
    tl:[{y:1956,b:"1956",s:"Aeropuerto de Techo"},{y:1961,b:"1961",s:"Ciudad Techo"},{y:2024,b:"Hoy",s:"En altura"}],
    era:{1956:1956,1961:1972,2024:2024},
    cap:{ 1956:`<b>1956 · Antiguo Aeropuerto de Techo</b> — la pista y las vías sobre los terrenos donde después se levantaría Ciudad Techo.`,
@@ -917,7 +917,7 @@ function hpSetMode(m){
   hp.style.setProperty("--c",n.color); hp.style.setProperty("--ink",ink(n.color));
   $("#hTitle").textContent=M.title; $("#hSub").textContent=M.sub;
   $("#htl").innerHTML=M.tl.map((x,k)=>`<button class="hd${k?"":" on"}" data-y="${x.y}"><b>${x.b}</b><small>${x.s}</small></button>`).join(`<span class="hln">${M.em?`<em>${M.em}</em>`:""}</span>`);
-  hp.querySelectorAll(".hd").forEach(b=>b.onclick=()=>hpSetYear(+b.dataset.y)); hpSetYear(M.tl[0].y);
+  hp.querySelectorAll(".hd").forEach(b=>b.onclick=()=>hpSetYear(+b.dataset.y)); hpSetYear(M.tl[M.start||0].y);
 }
 function hpSetYear(y){ hpYear=y; const hp=$("#hp"); hp.querySelectorAll(".hd").forEach(b=>b.classList.toggle("on",+b.dataset.y===y)); $("#hcap").innerHTML=CAP[y]; hfYear(y); hfWait(); }
 function preloadHist(){ hpBuild(); const hf=$("#hf"); if(!hf.dataset.l){ hf.dataset.l="1"; hf.src=HEMB; } }
@@ -962,36 +962,29 @@ const STEPS=[
  { w:"RAÍCES", t:"Por qué Bogotá depende de afuera", ic:"Sprout", g:1, net:["exp","crec","mod","perd","dep"], sel:"perd", prop:["exp"], panel:"pop:exp",
    x:"Adicionalmente, esta concentración se sostiene porque Bogotá mantiene una profunda dependencia alimentaria, derivada de la pérdida de producción agrícola local cuando resultó más rentable transformar la tierra rural en suelo urbano, proceso acelerado por la expulsión violenta de campesinos." },
  { w:"SATURACIÓN", t:"Concentración comercial y logística", ic:"Gauge", g:1, net:["may","dep","trans","no2"], sel:"may", prop:["may"],
-   x:"Para medir cómo esta concentración satura el entorno, evaluamos los mapas multitemporales de 2020 y 2026 del indicador de Concentración Comercial y Logística. Al comparar ambos periodos, se evidencia una clara expansión y densificación de los núcleos comerciales desde Corabastos hacia los corredores residenciales colindantes.",
-   ind:[{n:"Concentración Comercial y Logística",c:["Intensidad comercial","Impermeabilización del suelo","Emisión térmica infrarroja"],v:"Mapas 2020 y 2026"}] },
+   x:"Para medir cómo esta concentración satura el entorno, evaluamos los mapas multitemporales de 2020 y 2026 del indicador de Concentración Comercial y Logística. Al comparar ambos periodos, se evidencia una clara expansión y densificación de los núcleos comerciales desde Corabastos hacia los corredores residenciales colindantes." },
  { w:"MOVILIDAD", t:"Sobrecarga de transporte", ic:"Bus", g:1, net:["cult","sinc","desp","trans"], sel:"trans", prop:["cult"], panel:"pop:trans",
    x:"Todo esto conecta directamente con la sobrecarga de transporte en Kennedy por desplazamientos masivos en franjas horarias específicas. Estos flujos responden a un modelo de sincronización industrial que fijó la jornada a primera hora para aprovechar la luz solar, un hábito cultural que prioriza la presencialidad estricta y el control del tiempo sobre la flexibilidad." },
  { w:"EMPLEO", t:"Clústeres de empleo", ic:"Briefcase", g:1, net:["trans","conc","clust","monoc","econag"], sel:"clust", prop:["conc"], panel:"pop:clust",
-   x:"Sumado a esto, existe una alta concentración espacial de clústeres de empleo debido a la expansión monocéntrica de Bogotá, donde el origen de Kennedy desde Ciudad Techo en 1961 masificó la función residencial en la periferia mientras la oferta laboral se centralizaba. Este fenómeno fue impulsado por economías de aglomeración que concentran empresas para reducir costos, obligando a viajes pendulares que sobrecargan las vías.",
-   ind:[{n:"Presión sobre la Movilidad Vehicular",c:["Emisiones de dióxido de nitrógeno","Densidad de la malla arterial","Accidentalidad"],v:"Evalúa el colapso vial"}] },
+   x:"Sumado a esto, existe una alta concentración espacial de clústeres de empleo debido a la expansión monocéntrica de Bogotá, donde el origen de Kennedy desde Ciudad Techo en 1961 masificó la función residencial en la periferia mientras la oferta laboral se centralizaba. Este fenómeno fue impulsado por economías de aglomeración que concentran empresas para reducir costos, obligando a viajes pendulares que sobrecargan las vías." },
  { w:"VIVIENDA", t:"Densificación y especulación", ic:"Building2", g:1, net:["conc","dens","esp","esc","plan"], sel:"dens", prop:["conc"], panel:"hist:dens",
-   x:"Asimismo, la densificación en altura y la especulación inmobiliaria concentran la residencia. Finalmente, esto es alimentado por una planificación urbana orientada al mercado y no a la descentralización, donde la infraestructura construida incentiva más clústeres y cierra un ciclo que fragmenta a Kennedy.",
-   ind:[{n:"Conflicto Vivienda-Actividad",c:["Densidad habitacional","× comercio e industria pesada"],v:"Fricción espacial por el mismo espacio público y red de transporte"}] },
+   x:"Asimismo, la densificación en altura y la especulación inmobiliaria concentran la residencia. Finalmente, esto es alimentado por una planificación urbana orientada al mercado y no a la descentralización, donde la infraestructura construida incentiva más clústeres y cierra un ciclo que fragmenta a Kennedy." },
  { w:"RESIDUOS", t:"Saturación de los residuos", ic:"Trash2", g:2, net:["res","desc","san","aguasres","cargas"], sel:"res", prop:["res","desc","aguasres"],
    x:"Por otro lado, la saturación de residuos desencadena fragmentación territorial. En los andenes, la acumulación de desechos se intensifica por ventas informales y su descomposición colapsa el saneamiento local, incrementando aguas residuales y cargas contaminantes." },
  { w:"AGUA", t:"Del desecho al humedal", ic:"Droplets", g:2, net:["aguasres","san","cargas","calagua","eco"], sel:"calagua", prop:["aguasres"],
    x:"El diagrama causal de este problema sintetiza esta degradación en tres niveles: generación masiva de desechos, colapso de la red de alcantarillado e impacto hídrico por escorrentía, donde los niveles de DBO5, nitrógeno y fósforo superan la capacidad de los humedales.",
    chips:["Generación masiva de desechos","Colapso de la red de alcantarillado","Impacto hídrico por escorrentía · DBO5, nitrógeno y fósforo"] },
  { w:"SOPORTE ECOLÓGICO", t:"Soporte ecológico", ic:"Globe", g:3, net:["plan","supcons","imperm","frag","perdveg","hab"], sel:"eco", prop:["plan"],
-   x:"Esto conecta con la degradación del soporte ecológico. Al analizar los mapas multitemporales de 2020 y 2026, observamos la desaparición de corredores ecológicos que conectaban la trama urbana con el humedal, debido a una planificación que prioriza la rentabilidad del suelo sobre la ecología, impulsando la pavimentación masiva.",
-   ind:[{n:"Soporte Ecológico",c:["Corredores ecológicos","Conexión trama urbana – humedal"],v:"Mapas 2020 y 2026"}] },
+   x:"Esto conecta con la degradación del soporte ecológico. Al analizar los mapas multitemporales de 2020 y 2026, observamos la desaparición de corredores ecológicos que conectaban la trama urbana con el humedal, debido a una planificación que prioriza la rentabilidad del suelo sobre la ecología, impulsando la pavimentación masiva." },
  { w:"CALOR", t:"Islas de calor", ic:"Mountain", g:3, net:["supcons","suelo","imperm","lluvia","eco"], sel:"imperm", prop:["supcons"],
-   x:"Como consecuencia, el indicador de Islas de Calor muestra para 2026 una expansión drástica de la mancha térmica al perder la capacidad de enfriamiento por evapotranspiración.",
-   ind:[{n:"Islas de Calor",c:["Mancha térmica 2020 – 2026","Evapotranspiración perdida"],v:"Mapas 2020 y 2026"}] },
+   x:"Como consecuencia, el indicador de Islas de Calor muestra para 2026 una expansión drástica de la mancha térmica al perder la capacidad de enfriamiento por evapotranspiración." },
  { w:"AIRE", t:"Calidad del aire", ic:"Wind", g:3, net:["trans","no2","aire","eco"], sel:"aire", prop:["trans"],
-   x:"Por último, la actividad industrial y vehicular deteriora la calidad del aire; el indicador de Presión sobre el Aire demuestra cómo la acumulación de dióxido de nitrógeno, monóxido de carbono y metano supera la capacidad de dispersión del ecosistema.",
-   ind:[{n:"Presión sobre el Aire",c:["Dióxido de nitrógeno","Monóxido de carbono","Metano"],v:"Supera la capacidad de dispersión del ecosistema"}] },
+   x:"Por último, la actividad industrial y vehicular deteriora la calidad del aire; el indicador de Presión sobre el Aire demuestra cómo la acumulación de dióxido de nitrógeno, monóxido de carbono y metano supera la capacidad de dispersión del ecosistema." },
  { w:"METABOLISMO", t:"Saturación del metabolismo territorial", ic:"Droplet", g:3, net:["imperm","lluvia","calagua","aire","biodiv","eco"], sel:"eco", prop:["imperm","calagua","aire","biodiv"],
    x:"El diagrama causal de la saturación del metabolismo territorial sintetiza cómo este desborde impacta la cuenca del Humedal El Burro en tres capas.",
    chips:["Pérdida de regulación hídrica por impermeabilización","Colapso de sumideros ambientales por escorrentía e islas de calor","Deterioro ecológico acumulado: menor resiliencia y mayor vulnerabilidad ambiental"] },
  { w:"RESPUESTA", t:"La respuesta social", ic:"Users", g:0, net:["root","may","res","eco"], sel:"root", prop:["root"],
-   x:"Sin embargo, para contrarrestar esta fragmentación, evaluamos el potencial de respuesta social mediante el indicador de Organizaciones Comunitarias, que mide la presencia de juntas de acción comunal y cooperativas vinculadas a huertas urbanas y equipamientos. A esto se suma el indicador de Densidad del Conocimiento, que identifica la concentración de capacidades educativas e innovación para transformar el entorno.",
-   ind:[{n:"Organizaciones Comunitarias",c:["Juntas de acción comunal","Cooperativas","Huertas urbanas y equipamientos"],v:"Potencial de respuesta social"},{n:"Densidad del Conocimiento",c:["Capacidades educativas","Innovación"],v:"Capacidad para transformar el entorno"}] },
+   x:"Sin embargo, para contrarrestar esta fragmentación, evaluamos el potencial de respuesta social mediante el indicador de Organizaciones Comunitarias, que mide la presencia de juntas de acción comunal y cooperativas vinculadas a huertas urbanas y equipamientos. A esto se suma el indicador de Densidad del Conocimiento, que identifica la concentración de capacidades educativas e innovación para transformar el entorno." },
  { w:"RUPTURAS", t:"Las tres rupturas", ic:"Puzzle", g:0, net:["root","may","res","eco"], sel:"root", prop:["root"],
    x:"El diagrama causal de la fragmentación territorial de Kennedy sintetiza el desequilibrio del territorio, donde la hiperconcentración de Corabastos altera los usos del suelo en tres rupturas.",
    chips:["Ruptura física y de movilidad: colapso vial del transporte de carga","Ruptura metabólica y ecológica: impermeabilización del suelo, sobrecarga del saneamiento y contaminación del Humedal El Burro","Ruptura en la gobernanza: falta de coordinación e inversión pública para descentralizar el abastecimiento"] }
@@ -1085,7 +1078,7 @@ function sqScene(){
   sqSched();
 }
 function sqFitP(){ if(isMobile()) return; const p=["#pl","#pp","#hp"].map(x=>$(x)).find(e=>e&&e.offsetWidth&&getComputedStyle(e).display!=="none"&&e.classList.contains("show")); if(p) $("#sqS").style.marginRight=(p.offsetWidth+44)+"px"; }
-function sqPanel(s){ const p=s.panel; if(p==="plano") openPlano(); else if(p.startsWith("hist")){ const m=p==="hist:dens"?"dens":"hig"; openHist(m); HMODES[m].tl.slice(1).forEach((x,k)=>sqAt(()=>hpSetYear(x.y),5500+k*5500)); } else popClick(KK[p.slice(4)]); [150,500,1200,2200].forEach(ms=>sqAt(sqFitP,ms)); }
+function sqPanel(s){ const p=s.panel; if(p==="plano") openPlano(); else if(p.startsWith("hist")){ const m=p==="hist:dens"?"dens":"hig"; openHist(m); HMODES[m].tl.slice((HMODES[m].start||0)+1).forEach((x,k)=>sqAt(()=>hpSetYear(x.y),5500+k*5500)); } else popClick(KK[p.slice(4)]); [150,500,1200,2200].forEach(ms=>sqAt(sqFitP,ms)); }
 function sqClose(){ SQ.on=false; sqClear(); document.body.classList.remove("sq-open"); }
 function sqOpen(){ SQ.play=true; closeInsp(); sqGo(0); }
 $("#bNar").onclick=sqOpen;
