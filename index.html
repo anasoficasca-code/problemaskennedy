@@ -77,9 +77,9 @@
   .glare{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(170px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.16),transparent 62%);z-index:2}
   .node:hover .glare{opacity:1}
   .node.on:hover{transform:translateY(-3px) scale(1.025);transition-delay:0s}
-  .node.has:not(.open) .cnt{animation:cp 2.2s ease-in-out infinite}
+  
   @keyframes cp{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--c) 32%,transparent)}}
-  .node.on{animation:arrive .8s cubic-bezier(.2,1.3,.3,1) var(--dl,0s) both}
+  
   @keyframes arrive{from{filter:brightness(2.2) blur(2px)}60%{filter:brightness(1.4)}to{filter:none}}
   .node.on.ping{animation:ping .9s ease-out}
   .xl.dimL{opacity:.06!important}
@@ -264,13 +264,15 @@
   #ghost{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;transition:opacity 1.4s}
   #ghost.off{opacity:0}
   #ghost line{stroke:#fff;stroke-opacity:.17;stroke-width:1.8}
-  #ghost circle{animation:gtw 3.6s ease-in-out infinite}
+  #ghost circle{opacity:.8}
+  body.lite .flow,body.lite .xl{animation:none}
+  body.hp-open .flow,body.hp-open .xl,body.hp-open .node.d0::after{animation:none}
   @keyframes gtw{50%{opacity:.35}}
 
   /* página limpia: sin panel de contexto, sin módulo derecho, sin leyenda, minimapa ni botones de zoom */
   #ctx,#bCtx,#mCtx,#insp,#mini,#zoom,#legend{display:none!important}
   /* panel pequeño de evolución histórica, pegado sobre la tarjeta de Higiene estatal */
-  #hp{position:fixed;z-index:60;width:440px;max-width:calc(100vw - 24px);padding:12px 12px 10px;background:rgba(10,10,10,.97);border:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);border-radius:16px;
+  #hp{position:fixed;z-index:60;width:min(900px,calc(100vw - 40px));max-width:calc(100vw - 24px);padding:12px 12px 10px;background:rgba(10,10,10,.97);border:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);border-radius:16px;
     box-shadow:0 18px 50px -12px rgba(0,0,0,.85);opacity:0;transform:translateY(10px) scale(.95);pointer-events:none;transition:opacity .35s,transform .5s cubic-bezier(.2,1.25,.3,1);user-select:text;-webkit-user-select:text}
   #hp.show{opacity:1;transform:none;pointer-events:auto}
   #hp::after{content:"";position:absolute;left:calc(var(--ax,50%) - 7px);bottom:-8px;width:14px;height:14px;background:#0a0a0a;border-right:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);border-bottom:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);transform:rotate(45deg)}
@@ -292,7 +294,7 @@
   .hc{display:flex;align-items:flex-start;gap:9px;padding:6px 4px}
   .hci{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 14%,#000);border:1px solid color-mix(in srgb,var(--c) 40%,#000)}.hci svg{width:15px;height:15px}
   .hc b{display:block;font:600 12.5px var(--mono);color:#fff;margin-bottom:1px}.hc p{font:400 11.5px/1.35 var(--sans);color:#bdbdbd}
-  .hv{position:relative;height:250px;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--line2);margin-top:2px}
+  .hv{position:relative;height:min(46vh,430px);border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--line2);margin-top:2px}
   #hf{width:100%;height:100%;border:0;display:block;background:#000}
   .hload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;background:#050505;font:500 11px var(--mono);letter-spacing:1px;color:var(--mut);text-transform:uppercase;transition:opacity .6s;pointer-events:none}
   .hload svg{width:18px;height:18px;animation:hspin 1.4s linear infinite}.hload.off{opacity:0}
@@ -425,8 +427,8 @@
 
 <div id="cur"></div><div id="cur2"></div>
 <div id="hp"></div>
-<script src="lib/d3.min.js"></script>
-<script src="lib/lucide.min.js"></script>
+<script src="lib/icons.js"></script>
+<script src="lib/d3-lite.js"></script>
 <script>
 /* =====================================================================
    DATOS: 41 variables y 49 conexiones tal como están en el tablero de Miro
@@ -580,7 +582,7 @@ function refresh(origin){
   });
   let vx=0; xedges.forEach(x=>{ const on=x.s.vis&&x.t.vis; if(on) vx++; x.p.classList.toggle("on",on); });
   const el=$("#sX"); if(el) el.textContent=vx+"/"+xedges.length; const sn=$("#sN"); if(sn) sn.textContent=all.filter(n=>n.vis).length+"/"+all.length;
-  updateLanes(); drawMini(); renderInsp(); applySelFocus(); const gh=$("#ghost"); if(gh) gh.classList.toggle("off",!(introStage===1&&!DATA.open));
+  updateLanes(); drawMini(); renderInsp(); applySelFocus(); const gh=$("#ghost"); if(gh) gh.classList.toggle("off",!(introStage===1&&!DATA.open)); document.body.classList.toggle("lite",all.filter(n=>n.vis&&n.base).length>12);
 }
 function toggle(n){
   if(!n.kids.length){ ping(n); if(!isMobile()) focusOn(n); return; }
@@ -619,7 +621,7 @@ all.forEach(n=>{
   e.addEventListener("click",ev=>{ ev.stopPropagation(); if(moved) return;
     if(n===DATA&&introStage===0&&!isMobile()){ introStage=1; ripple(n); select(n); $("#hint").innerHTML=icon("MousePointerClick",2)+"Haz clic otra vez en la Fragmentación Territorial para ver los 3 problemas"; refresh(null); zoomTo(all,2400); return; }
     if(n===DATA&&introStage===1) introStage=2;
-    if(n.key==="may") setTimeout(preloadHist,900); if(n.key!=="hig") closeHist(); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig"){ if(hpOpen) closeHist(); else setTimeout(openHist,550); } });
+    if(!inHig(n)) closeHist(); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig"){ if(hpOpen) closeHist(); else setTimeout(openHist,300); } });
   e.addEventListener("mouseenter",()=>focusLine(n)); e.addEventListener("mouseleave",()=>focusLine(null));
   e.addEventListener("mousemove",ev=>{ const r=e.getBoundingClientRect(); e.style.setProperty("--mx",((ev.clientX-r.left)/T.k)+"px"); e.style.setProperty("--my",((ev.clientY-r.top)/T.k)+"px"); });
   if(n.parent){
@@ -707,7 +709,7 @@ function bindAct(root){
   root.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{ if(!sel) return; if(b.dataset.a==="prop") runProp(sel); else if(b.dataset.a==="hist") openHist(); else openSub(sel); if(isMobile()) closeSheet(); });
 }
 function renderInsp(){
-  if(isMobile()) return;
+  return;   // el módulo de la derecha ya no existe en escritorio (en celular se usa la hoja inferior)
   const box=$("#insp"); if(!sel){ box.classList.remove("show"); return; }
   $("#ibody").innerHTML=inspHTML(sel); bindAct($("#ibody")); box.classList.add("show");
 }
@@ -778,6 +780,9 @@ html,body{background:#050505!important;overflow:hidden!important}
 html,body,canvas{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><circle cx='14' cy='14' r='10' fill='none' stroke='%23d9755f' stroke-width='2'/><circle cx='14' cy='14' r='3' fill='%23d9755f'/></svg>") 14 14,crosshair!important}`;
 function hfInject(){ try{ const d=$("#hf").contentDocument; if(!d||!d.head) return false; if(!d.getElementById("kn-style")){ const s=d.createElement("style"); s.id="kn-style"; s.textContent=HF_CSS; d.head.appendChild(s); } return true; }catch(e){ return false; } }
 function hfYear(y){ try{ const b=$("#hf").contentDocument.querySelector('.year-btn[data-year="'+y+'"]'); if(b) b.click(); }catch(e){} }
+function hfGate(){ try{ const w=$("#hf").contentWindow; if(!w||w.__gate) return; w.__gate=1; w.__held=[]; w.__paused=!hpOpen; const raf=w.requestAnimationFrame.bind(w); w.requestAnimationFrame=cb=>raf(t=>{ if(w.__paused) w.__held.push(cb); else cb(t); }); }catch(e){} }
+function hfPause(){ try{ const w=$("#hf").contentWindow; if(w&&w.__gate) w.__paused=true; }catch(e){} }
+function hfResume(){ try{ const w=$("#hf").contentWindow; if(w&&w.__gate){ w.__paused=false; const q=w.__held.splice(0); q.forEach(cb=>w.requestAnimationFrame(cb)); } }catch(e){} }
 function hpBuild(){
   if(hpBuilt) return; hpBuilt=true; const hp=$("#hp"), n=KK.hig;
   hp.style.setProperty("--c",n.color); hp.style.setProperty("--ink",ink(n.color));
@@ -789,26 +794,32 @@ function hpBuild(){
   hp.querySelector(".hx").onclick=closeHist;
   hp.querySelectorAll(".hd").forEach(b=>b.onclick=()=>hpSetYear(+b.dataset.y));
   const hf=$("#hf"); hf.addEventListener("mouseenter",()=>document.body.classList.add("cur-off")); hf.addEventListener("mouseleave",()=>document.body.classList.remove("cur-off"));
-  hf.addEventListener("load",()=>{ hfInject(); setTimeout(()=>{ hfInject(); hfYear(hpYear); hp.querySelector(".hload").classList.add("off"); },900); });
+  hf.addEventListener("load",()=>{ hfInject(); hfGate(); setTimeout(()=>{ hfInject(); hfGate(); hfYear(hpYear); hp.querySelector(".hload").classList.add("off"); },900); });
   hpSetYear(1900);
 }
 function hpSetYear(y){ hpYear=y; const hp=$("#hp"); hp.querySelectorAll(".hd").forEach(b=>b.classList.toggle("on",+b.dataset.y===y)); $("#hcap").innerHTML=CAP[y]; hfYear(y); }
 function preloadHist(){ hpBuild(); const hf=$("#hf"); if(!hf.dataset.l){ hf.dataset.l="1"; hf.src=HURL; } }
 function placeHP(){
-  if(!hpOpen||isMobile()) return; const hp=$("#hp"), r=KK.hig.el.getBoundingClientRect(), pw=Math.min(440,innerWidth-24), ph=hp.offsetHeight||440;
-  let left=r.left+r.width/2-pw/2; left=Math.max(12,Math.min(innerWidth-pw-12,left));
+  if(!hpOpen||isMobile()) return;
+  const hp=$("#hp"), hv=hp.querySelector(".hv"), r=KK.hig.el.getBoundingClientRect();
+  const chrome=hp.offsetHeight-hv.offsetHeight, avail=r.top-18-74-chrome;
+  hv.style.height=Math.max(220,Math.min(560,avail))+"px";                 // la axonometría ocupa todo el espacio libre de arriba
+  const pw=hp.offsetWidth, ph=hp.offsetHeight; let left=r.left+r.width/2-pw/2; left=Math.max(12,Math.min(innerWidth-pw-12,left));
   let top=r.top-ph-18, below=false; if(top<64){ top=r.bottom+18; below=true; }
   hp.style.left=left+"px"; hp.style.top=top+"px"; hp.classList.toggle("below",below); hp.style.setProperty("--ax",Math.max(24,Math.min(pw-24,r.left+r.width/2-left))+"px");
 }
-function openHist(){
-  preloadHist(); hpOpen=true; hpSetYear(1900); $("#hp").classList.add("show");
-  if(!isMobile()){ // baja el mapa lo justo para que el panel quede ARRIBA de la tarjeta y no tape las demás
-    const ph=$("#hp").offsetHeight||440, r=KK.hig.el.getBoundingClientRect(), need=ph+86-r.top;
-    if(need>0) goto(d3.zoomIdentity.translate(T.x,T.y+need).scale(T.k),900);
-  }
-  placeHP(); requestAnimationFrame(placeHP);
+function inHig(n){ for(let p=n;p;p=p.parent) if(p===KK.hig) return true; return false; }
+function frameHigRow(){ // toda la fila de Higiene estatal (hasta Monoexportación) queda ABAJO y completa
+  const n=KK.hig, ds=[n,...descendants(n)], x0=Math.min(...ds.map(d=>d.x)), x1=Math.max(...ds.map(d=>d.x+d.w));
+  const k=Math.max(.3,Math.min((W-90)/(x1-x0),1)), tx=(W-(x1-x0)*k)/2-x0*k, ty=(H-92)-n.y*k;
+  goto(d3.zoomIdentity.translate(tx,ty).scale(k),1400);
 }
-function closeHist(){ hpOpen=false; $("#hp").classList.remove("show"); document.body.classList.remove("cur-off"); }
+function openHist(){
+  preloadHist(); hpOpen=true; hpSetYear(1900); document.body.classList.add("hp-open"); $("#hp").classList.add("show"); hfResume();
+  if(!isMobile()) frameHigRow();
+  placeHP(); requestAnimationFrame(placeHP); setTimeout(placeHP,700); setTimeout(placeHP,1500);
+}
+function closeHist(){ hpOpen=false; hfPause(); document.body.classList.remove("hp-open","cur-off"); $("#hp").classList.remove("show"); }
 addEventListener("keydown",e=>{ if(e.key==="Escape") closeHist(); });
 
 /* ============ Contexto (narrativa de la exposición) ============ */
@@ -881,6 +892,8 @@ function applySelFocus(){
 }
 function focusOn(n){
   if(isMobile()) return;
+  if(hpOpen&&inHig(n)) return;            // con la axonometría abierta la cámara no se mueve: la fila de Higiene se queda abajo
+  if(n.key==="hig"&&!hpOpen) return;       // Higiene se encuadra sola con su panel
   let changed=false; n.xs.forEach(x=>{ const o=x.s===n?x.t:x.s; if(!o.vis){ for(let p=o.parent;p;p=p.parent){ if(!p.open){ p.open=true; changed=true; } } } });
   if(changed) refresh(n);
   const partners=n.xs.map(x=>x.s===n?x.t:x.s);
@@ -895,9 +908,9 @@ addEventListener("resize",()=>{ W=innerWidth; H=innerHeight; updateVP(); });
 const ms=d3.select("#miniSvg"), full=bbox(all), FW=full.x1-full.x0+80, FH=full.y1-full.y0+80;
 ms.attr("viewBox",`${full.x0-40} ${full.y0-40} ${FW} ${FH}`).attr("preserveAspectRatio","xMidYMid meet");
 const mg=ms.append("g"), mvp=ms.append("rect").attr("class","vp");
-function drawMini(){ mg.selectAll("rect").data(all.filter(n=>n.vis),d=>d.id).join(e=>e.append("rect").attr("rx",10),u=>u,x=>x.remove())
+function drawMini(){ return; mg.selectAll("rect").data(all.filter(n=>n.vis),d=>d.id).join(e=>e.append("rect").attr("rx",10),u=>u,x=>x.remove())
   .attr("x",d=>d.x).attr("y",d=>d.y-d.h/2+12).attr("width",d=>d.w).attr("height",d=>d.h-24).attr("fill",d=>d.depth===0?P.root:d.color).attr("opacity",d=>d.depth===0?1:.85); }
-function updateVP(){ mvp.attr("x",-T.x/T.k).attr("y",-T.y/T.k).attr("width",W/T.k).attr("height",H/T.k); }
+function updateVP(){ return; mvp.attr("x",-T.x/T.k).attr("y",-T.y/T.k).attr("width",W/T.k).attr("height",H/T.k); }
 $("#mini").addEventListener("click",e=>{ const r=$("#miniSvg").getBoundingClientRect(), s=Math.min(r.width/FW,r.height/FH), ox=(r.width-FW*s)/2, oy=(r.height-FH*s)/2;
   const wx=(e.clientX-r.left-ox)/s+full.x0-40, wy=(e.clientY-r.top-oy)/s+full.y0-40; goto(d3.zoomIdentity.translate(W/2-wx*T.k,H/2-wy*T.k).scale(T.k),600); });
 
@@ -926,6 +939,8 @@ function wireSearch(inp,resBox){
   inp.addEventListener("blur",()=>setTimeout(()=>resBox.classList.remove("show"),180));
 }
 wireSearch($("#q"),$("#res")); wireSearch($("#mq"),$("#mres"));
+
+addEventListener("load",()=>setTimeout(()=>{ if(isMobile()) return; if("requestIdleCallback" in window) requestIdleCallback(()=>preloadHist(),{timeout:9000}); else preloadHist(); },6000));
 
 /* ============ Cursor propio (solo con mouse) ============ */
 if(matchMedia("(pointer:fine)").matches){
