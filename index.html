@@ -332,6 +332,8 @@
     .sq-foot{padding:0 14px calc(14px + env(safe-area-inset-bottom));gap:10px}.sq-ctl{width:100%}.sq-ctl .btn{flex:1}.sq-dots{order:3;flex:1}.sq-lab{order:4}
     .sq-bar{left:14px;right:14px}
     #pl,#pp,#hp{z-index:80}
+    body.sq-open #pl,body.sq-open #pp,body.sq-open #hp{top:auto!important;bottom:calc(112px + env(safe-area-inset-bottom))!important;max-height:calc(100vh - 190px);overflow:auto}
+    .sq-txt{display:flex;flex-direction:column}.sq-txt .kk,.sq-txt h2{order:-2}.sq-txt .nv{order:-1;align-self:flex-start;margin:0 0 12px}
   }
   body.sq-open #hp{left:auto!important;right:20px;top:70px!important;width:min(640px,calc(100vw - 40px));z-index:62}body.sq-open #hp::after{display:none}body.sq-open .hv{height:min(46vh,420px)!important}
   /* panel pequeño de evolución histórica, pegado sobre la tarjeta de Higiene estatal */
