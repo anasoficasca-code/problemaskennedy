@@ -159,6 +159,32 @@
   .iact .btn{flex:1;padding:0 10px}
   #mbar{display:none}
 
+  /* ---------- panel de contexto (narrativa) ---------- */
+  #ctx{position:fixed;left:20px;top:76px;width:380px;max-height:calc(100vh - 480px);min-height:240px;overflow:auto;z-index:19;padding:20px 20px 18px;background:#080808;border:1px solid var(--line2);border-radius:16px;
+    opacity:0;transform:translateX(-12px);pointer-events:none;transition:opacity .25s,transform .25s;user-select:text;-webkit-user-select:text}
+  #ctx.show{opacity:1;transform:none;pointer-events:auto}
+  #cClose{position:absolute;right:10px;top:10px;width:32px;height:32px;border-radius:9px;background:none;border:0;color:var(--mut);cursor:pointer;display:grid;place-items:center}
+  #cClose:hover{background:#171717;color:#fff}#cClose svg{width:16px;height:16px}
+  #ctx .ch{display:flex;align-items:center;gap:12px;padding-right:28px}
+  #ctx .ch i{flex:none;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:#f4f4f4;color:#000}#ctx .ch i svg{width:24px;height:24px}
+  #ctx h3{font:700 17px/1.2 var(--sans)} #ctx .sub{font:400 10px var(--mono);letter-spacing:1.4px;color:var(--mut);text-transform:uppercase;margin-top:4px}
+  #ctx .part{margin-top:18px}
+  #ctx .part .tag{display:inline-flex;align-items:center;gap:6px;font:500 10px var(--mono);letter-spacing:1.4px;color:var(--dim);text-transform:uppercase;margin-bottom:8px}
+  #ctx .part .tag svg{width:13px;height:13px}
+  #ctx p{font:400 13.5px/1.6 var(--sans);color:#d2d2d2;margin-bottom:10px}
+  #ctx a{color:#fff;font-weight:600;border-bottom:2px solid var(--c,#fff);cursor:pointer;padding-bottom:1px;white-space:normal;transition:background .15s}
+  #ctx a:hover{background:color-mix(in srgb,var(--c,#fff) 25%,transparent)}
+  #ctx .note{font:400 11.5px var(--sans);color:var(--mut);border-top:1px solid var(--line);padding-top:12px;margin-top:6px;display:flex;gap:8px;align-items:center}
+  #ctx .note svg{flex:none;width:14px;height:14px}
+  @media (max-width:1100px) and (min-width:761px){ #ctx{width:320px} }
+  @media (max-width:760px){
+    #ctx{left:0;right:0;top:auto;bottom:0;width:auto;max-height:68vh;border-radius:22px 22px 0 0;border-width:1px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));transform:translateY(105%);z-index:46}
+    #ctx.show{transform:none}
+    #ctx::before{content:"";display:block;width:42px;height:4px;border-radius:2px;background:#333;margin:-10px auto 14px}
+    #cClose{top:14px}
+    #mbar .btn{font-size:10.5px}
+  }
+
   /* ---------- tablet ---------- */
   @media (max-width:1100px){
     #brand p{display:none} .search{width:220px}
@@ -199,6 +225,7 @@
   <div id="brand"><div class="logo" id="logo"></div><div><h1>Problemáticas de Kennedy</h1><p>Modelamiento dinámico · red causal</p></div></div>
   <button class="btn" id="bSearch" aria-label="Buscar"></button>
   <div class="search" id="dsearch"></div>
+  <button class="btn" id="bCtx"></button>
   <button class="btn pri" id="bProp"></button>
   <button class="btn" id="bAll"></button>
   <button class="btn" id="bReset"></button>
@@ -208,7 +235,8 @@
 <div id="legend"></div>
 <div id="zoom"><button class="btn" id="bIn"></button><button class="btn" id="bOut"></button><button class="btn" id="bFit"></button></div>
 <div id="insp"><button id="iClose" aria-label="Cerrar"></button><div id="ibody"></div></div>
-<div id="mbar"><button class="btn pri" id="mP"></button><button class="btn" id="mAll"></button><button class="btn" id="mReset"></button><button class="btn" id="mLeg"></button></div>
+<div id="ctx"><button id="cClose" aria-label="Cerrar"></button><div id="cbody"></div></div>
+<div id="mbar"><button class="btn" id="mCtx"></button><button class="btn pri" id="mP"></button><button class="btn" id="mAll"></button><button class="btn" id="mReset"></button><button class="btn" id="mLeg"></button></div>
 
 <script src="lib/d3.min.js"></script>
 <script src="lib/lucide.min.js"></script>
@@ -541,6 +569,23 @@ addEventListener("resize",()=>{ W=innerWidth; H=innerHeight; });
     else if(e.key==="Enter"&&hits.length) pick(hits[Math.max(0,act)]); else if(e.key==="Escape"){ inp.value=""; run(); inp.blur(); } });
   inp.addEventListener("blur",()=>setTimeout(()=>res.classList.remove("show"),180));
 })();
+
+/* ============ contexto: la narrativa del problema (textos de la exposición) ============ */
+const lk=(k,t)=>`<a data-k="${k}" style="--c:${K[k].color}">${t}</a>`;
+$("#cbody").innerHTML=`<div class="ch"><i>${icon("BookOpen",1.8)}</i><div><h3>El problema en palabras</h3><div class="sub">Textos de la exposición · toca lo subrayado</div></div></div>
+ <div class="part"><div class="tag">${icon("Puzzle",2)}Lo que identificamos</div>
+ <p>Hemos identificado una problemática territorial crítica: la ${lk("root","fragmentación espacial")}. Este fenómeno no constituye un evento aislado, sino que es el producto acumulado de contradicciones estructurales que operan en el territorio.</p>
+ <p>El primer eje de esta problemática es la ${lk("may","hiperconcentración del mercado mayorista")}, cuyos síntomas iniciales se vinculan directamente con los modelos históricos de ${lk("hig","higiene estatal y salubridad pública")}.</p></div>
+ <div class="part"><div class="tag">${icon("Route",2)}Por qué falla la planificación</div>
+ <p>La falla de fondo del POT es asumir que Corabastos es solo un predio que se puede mover en el mapa, ignorando que funciona como el corazón de un tejido vivo de economía popular que sostiene a Kennedy y a la ciudad.</p>
+ <p>Además, la norma fragmenta la localidad en piezas aisladas: dibuja reservas hídricas protegidas, pero al mismo tiempo consolida el ${lk("trans","tráfico de tractomulas")} por la Avenida Ciudad de Cali y la Carrera 80, bordeando los mismos ${lk("eco","ecosistemas")} que promete cuidar.</p>
+ <p>Pretender resolver una sobrecarga de escala regional mediante intervenciones físicas locales y desarticuladas es la razón por la que la planificación choca con la realidad del territorio.</p></div>
+ <div class="note">${icon("Network",2)}Cada término subrayado te lleva a su variable dentro de la red.</div>`;
+$("#cClose").innerHTML=icon("X",2);
+$("#bCtx").innerHTML=icon("BookOpen",2)+"Contexto"; $("#mCtx").innerHTML=icon("BookOpen",2)+"Contexto";
+function toggleCtx(force){ const c=$("#ctx"); const on=force===undefined?!c.classList.contains("show"):force; c.classList.toggle("show",on); if(on){ $("#legend").classList.remove("open"); if(isMobile()) $("#iClose").onclick(); } }
+$("#bCtx").onclick=()=>toggleCtx(); $("#mCtx").onclick=()=>toggleCtx(); $("#cClose").onclick=()=>toggleCtx(false);
+$("#cbody").querySelectorAll("a[data-k]").forEach(a=>a.onclick=()=>{ if(isMobile()) toggleCtx(false); goNode(K[a.dataset.k]); });
 
 /* ============ inicio ============ */
 root.vis=true; svg.call(zoom.transform,homeT()); refresh();
