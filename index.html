@@ -304,6 +304,37 @@
   .hl{display:flex;align-items:center;gap:6px;margin:6px 2px 0;padding-top:8px;border-top:1px solid var(--line);font:500 11px var(--sans);color:#aaa;text-decoration:none}.hl:hover{color:#fff}.hl svg{width:13px;height:13px}
   @media (max-width:900px){ #hp{left:8px!important;right:8px;top:auto!important;bottom:calc(78px + env(safe-area-inset-bottom));width:auto;max-width:none} #hp::after{display:none} .hv{height:38vh} }
 
+  /* plano animado de Kennedy (PDF) — tarjeta blanca con el plano en negro */
+  #pl{position:fixed;z-index:62;right:20px;top:70px;background:#fff;color:#111;border-radius:18px;padding:10px 12px 12px;box-shadow:0 24px 70px -18px rgba(0,0,0,.9);display:none}
+  #pl.show{display:block;animation:plin .55s cubic-bezier(.2,1.15,.3,1)}
+  @keyframes plin{from{opacity:0;transform:translateY(14px) scale(.96)}}
+  .pl-h{display:flex;align-items:center;gap:9px;padding:2px 2px 10px}
+  .pl-h i{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#111;color:#fff}.pl-h i svg{width:17px;height:17px}
+  .pl-h b{display:block;font:700 13.5px var(--sans);color:#111}.pl-h span{font:400 9.5px var(--mono);letter-spacing:.9px;color:#777;text-transform:uppercase}
+  .pl-h .sp{margin-left:auto;display:flex;gap:6px}
+  .pl-h button{width:30px;height:30px;border-radius:9px;border:1px solid #ddd;background:#f6f6f6;color:#333;cursor:pointer;display:grid;place-items:center}.pl-h button:hover{background:#111;color:#fff;border-color:#111}.pl-h button svg{width:15px;height:15px}
+  .pl-stage{position:relative;overflow:hidden;border-radius:12px;background:#000}
+  .pl-stage img{position:absolute;inset:0;width:100%;height:100%;display:block;animation:plfade 1s ease both}
+  @keyframes plfade{from{opacity:0}}
+  .pl-stage svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .pl-dots{animation:plfade 1.1s .5s both}
+  .pl-d{fill:#ffb55a;animation:pltw 2.4s ease-in-out infinite}
+  @keyframes pltw{0%,100%{opacity:.2}50%{opacity:1}}
+  .pl-line{fill:none;stroke:#ffdcae;stroke-width:1.8;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:.38;animation:pldraw 2.2s cubic-bezier(.4,0,.2,1) both}
+  @keyframes pldraw{to{stroke-dashoffset:0}}
+  .pl-p circle:first-child{fill:rgba(255,178,90,.28)}.pl-p circle:last-child{fill:#ffe2b8}
+  .pl-ring{fill:none;stroke:#ffb25a;stroke-width:2;transform-box:fill-box;transform-origin:center;animation:plring 2.6s ease-out infinite;opacity:0}
+  @keyframes plring{0%{transform:scale(.3);opacity:.9}100%{transform:scale(5);opacity:0}}
+  .pl-core{animation:plfade .8s 2.4s both}
+  .pl-labels{position:absolute;inset:0;pointer-events:none}
+  .pl-lb{position:absolute;padding:3px 7px 3px 6px;border-left:2px solid #ffb25a;background:rgba(8,8,8,.78);color:#f4efe6;font:500 10px/1.25 var(--mono);letter-spacing:.7px;text-transform:uppercase;white-space:nowrap;animation:pllb .7s cubic-bezier(.2,1.3,.3,1) both}
+  .pl-lb.city{font:700 13px/1.1 var(--mono);letter-spacing:1px;border-left-color:#fff}
+  .pl-lb.reg{letter-spacing:3px;font-size:9.5px;border-left-color:#8c8c8c;color:#cfcfcf}
+  .pl-lb.wet{border-left-color:#6fb1d8;color:#cfe8f7}
+  .pl-lb.poi{font:700 12.5px/1.1 var(--mono);color:#fff;border-left-color:#ffb25a;background:rgba(40,20,0,.82)}
+  @keyframes pllb{from{opacity:0;transform:translateY(8px) scale(.85)}}
+  @media (max-width:900px){ #pl{right:auto;top:auto;bottom:calc(78px + env(safe-area-inset-bottom))} }
+
   /* =========================== MÓVIL =========================== */
   #mob{display:none}
   @media (max-width:900px){
@@ -427,6 +458,7 @@
 
 <div id="cur"></div><div id="cur2"></div>
 <div id="hp"></div>
+<div id="pl"></div>
 <script src="lib/icons.js"></script>
 <script src="lib/d3-lite.js"></script>
 <script>
@@ -621,7 +653,8 @@ all.forEach(n=>{
   e.addEventListener("click",ev=>{ ev.stopPropagation(); if(moved) return;
     if(n===DATA&&introStage===0&&!isMobile()){ introStage=1; ripple(n); select(n); $("#hint").innerHTML=icon("MousePointerClick",2)+"Haz clic otra vez en la Fragmentación Territorial para ver los 3 problemas"; refresh(null); zoomTo(all,2400); return; }
     if(n===DATA&&introStage===1) introStage=2;
-    if(!inHig(n)) closeHist(); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig"){ if(hpOpen) closeHist(); else setTimeout(openHist,300); } });
+    if(!inHig(n)) closeHist(); if(n.key!=="dep") closePlano(); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig"){ if(hpOpen) closeHist(); else setTimeout(openHist,300); }
+    if(n.key==="dep"){ if(plOpen) closePlano(); else setTimeout(openPlano,300); } });
   e.addEventListener("mouseenter",()=>focusLine(n)); e.addEventListener("mouseleave",()=>focusLine(null));
   e.addEventListener("mousemove",ev=>{ const r=e.getBoundingClientRect(); e.style.setProperty("--mx",((ev.clientX-r.left)/T.k)+"px"); e.style.setProperty("--my",((ev.clientY-r.top)/T.k)+"px"); });
   if(n.parent){
@@ -672,7 +705,7 @@ function focusLine(n){
     const xch=n.xs.length?`<div class="xchips">${n.xs.map(x=>{ const o=x.s===n?x.t:x.s, sym=!x.dir?"—":(x.s===n?"→":"←"); return `<span class="xchip" data-k="${o.key}" style="--c:${o.color}"><b>${sym}</b>${o.s}</span>`; }).join("")}</div>`:"";
     d.innerHTML=`<div class="mc"><div class="mt">${icon(n.i)}</div><div class="mx"><span class="mid">VAR ${n.code}${xb}</span><span class="ml">${n.t}</span>${xch}</div><div class="mr">${n.kids.length?`<span class="mcnt"><span>${n.kids.length}</span>${icon("ChevronRight",2.4)}</span>`:""}<button class="mi" aria-label="Detalles">${icon("Info",2)}</button></div></div>${n.kids.length?`<div class="mk"><div class="mki"></div></div>`:""}`;
     n.mel=d;
-    d.querySelector(".mc").addEventListener("click",()=>{ select(n); if(n.kids.length) toggle(n); else openSheet(n); if(n.key==="hig") setTimeout(openHist,800); });
+    d.querySelector(".mc").addEventListener("click",()=>{ select(n); if(n.kids.length) toggle(n); else openSheet(n); if(n.key==="hig") setTimeout(openHist,800); if(n.key==="dep") setTimeout(openPlano,600); });
     d.querySelector(".mi").addEventListener("click",ev=>{ ev.stopPropagation(); select(n); openSheet(n); });
     d.querySelectorAll(".xchip").forEach(c=>c.addEventListener("click",ev=>{ ev.stopPropagation(); goNode(KK[c.dataset.k]); }));
     if(n.kids.length){ const box=d.querySelector(".mki"); n.kids.forEach(k=>box.appendChild(mkm(k))); }
@@ -942,6 +975,45 @@ wireSearch($("#q"),$("#res")); wireSearch($("#mq"),$("#mres"));
 
 addEventListener("load",()=>setTimeout(()=>{ if(isMobile()) return; if("requestIdleCallback" in window) requestIdleCallback(()=>preloadHist(),{timeout:9000}); else preloadHist(); },6000));
 
+/* ============ Plano animado (PDF de Kennedy) al tocar Dependencia alimentaria ============ */
+const PL={w:912,h:1157,T:[525,725],src:"assets/plano-kennedy.jpg"};   // T = punto de Corabastos, movido hacia "Humedal La Vaca"
+const PL_PATHS=[
+  "M120 92C210 110 300 230 340 320S450 480 475 570S515 640 527 680Q530 700 525 722",
+  "M240 215C300 270 400 380 455 470S495 600 520 660Q528 700 525 722",
+  "M420 345C440 380 465 420 470 480S505 600 522 660Q528 700 525 722",
+  "M735 195C690 250 640 330 612 400S590 470 595 520C600 580 640 620 610 650C580 672 545 700 527 722",
+  "M175 845C270 830 330 790 420 750S500 715 523 722"];
+const PL_DOTS=[[140,100,85,55,34],[255,235,70,55,26],[420,300,65,50,26],[745,165,60,70,30],[110,850,80,55,28]];
+const PL_LABELS=[   // texto del PDF · posición (px del plano) · tipo
+  ["A ZIPAQUIRÁ<br>UBATÉ",209,53,"reg"],["SABANA<br>OCCIDENTE",115,161,"reg"],["A FACATATIVÁ<br>LA MESA",65,354,"reg"],["CUNDINAMARCA",402,87,"reg"],
+  ["SABANA<br>CENTRO",435,299,"reg"],["SABANA<br>CENTRO",640,170,"reg"],["A TUNJA<br>BOYACÁ",803,72,"reg"],["BOGOTÁ",652,524,"city"],
+  ["Humedal<br>El Burro",551,588,"wet"],["Humedal<br>La Vaca",450,756,"wet"],["Corabastos",552,698,"poi"],["AEROPUERTO<br>EL DORADO",742,598,"reg"]];
+let plOpen=false;
+function plRand(seed){ return ()=>{ seed=(seed*16807)%2147483647; return (seed-1)/2147483646; }; }
+function plBuild(){
+  const rnd=plRand(11); let dots="", parts="", lines="", lbs="", k=0;
+  PL_DOTS.forEach(([cx,cy,rx,ry,n])=>{ for(let i=0;i<n;i++){ const a=rnd()*6.283, r=Math.sqrt(rnd()); dots+=`<circle class="pl-d" cx="${(cx+Math.cos(a)*r*rx).toFixed(1)}" cy="${(cy+Math.sin(a)*r*ry).toFixed(1)}" r="${(1.4+rnd()*1.1).toFixed(1)}" style="animation-delay:${(-rnd()*2.4).toFixed(2)}s"/>`; } });
+  PL_PATHS.forEach((d,i)=>{ lines+=`<path id="plp${i}" class="pl-line" pathLength="1" d="${d}" style="animation-delay:${(.9+i*.25).toFixed(2)}s"/>`;
+    for(let j=0;j<7;j++){ const dur=(5.2+i*.5).toFixed(1); parts+=`<g class="pl-p"><circle r="6.5"/><circle r="2.5"/><animateMotion dur="${dur}s" begin="${(2.4+j*(dur/7)).toFixed(2)}s" repeatCount="indefinite"><mpath href="#plp${i}"/></animateMotion></g>`; } });
+  PL_LABELS.forEach(([t,x,y,c],i)=>{ lbs+=`<div class="pl-lb ${c}" style="left:${(x/PL.w*100).toFixed(2)}%;top:${(y/PL.h*100).toFixed(2)}%;animation-delay:${(1.1+i*.22).toFixed(2)}s">${t}</div>`; });
+  const [tx,ty]=PL.T;
+  $("#pl").innerHTML=`<div class="pl-h"><i>${icon("MapPin",2)}</i><div><b>Plano de Kennedy</b><span>Dependencia alimentaria · el abasto llega a Corabastos</span></div><div class="sp"><button id="plR" aria-label="Repetir animación" title="Repetir animación">${icon("RotateCcw",2)}</button><button id="plX" aria-label="Cerrar">${icon("X",2.2)}</button></div></div>
+   <div class="pl-stage" id="plS"><img alt="Plano de Kennedy y la Sabana" src="${PL.src}">
+   <svg viewBox="0 0 ${PL.w} ${PL.h}" preserveAspectRatio="none"><g class="pl-dots">${dots}</g>${lines}${parts}
+     <g transform="translate(${tx} ${ty})"><circle class="pl-ring" r="10"/><circle class="pl-ring" r="10" style="animation-delay:.9s"/><circle class="pl-ring" r="10" style="animation-delay:1.8s"/><g class="pl-core"><circle r="13" fill="rgba(255,178,90,.35)"/><circle r="7" fill="#ffb25a" stroke="#fff" stroke-width="2.2"/></g></g></svg>
+   <div class="pl-labels">${lbs}</div></div>`;
+  $("#plX").onclick=closePlano; $("#plR").onclick=plBuild; plSize();
+}
+function plSize(){
+  const pl=$("#pl"), st=$("#plS"); if(!st) return; const mob=isMobile(), ratio=PL.h/PL.w;
+  let ih=Math.min(innerHeight-(mob?160:96),mob?680:880)-70, iw=ih/ratio;
+  if(mob){ iw=Math.min(iw,innerWidth-34); ih=iw*ratio; pl.style.left=((innerWidth-(iw+24))/2)+"px"; pl.style.right="auto"; } else { pl.style.left="auto"; }
+  pl.style.width=(iw+24)+"px"; st.style.height=ih+"px";
+}
+function openPlano(){ if(typeof closeHist==="function") closeHist(); plOpen=true; plBuild(); $("#pl").classList.add("show"); }
+function closePlano(){ plOpen=false; const pl=$("#pl"); pl.classList.remove("show"); pl.innerHTML=""; }
+addEventListener("resize",plSize); addEventListener("keydown",e=>{ if(e.key==="Escape") closePlano(); });
+
 /* ============ Cursor propio (solo con mouse) ============ */
 if(matchMedia("(pointer:fine)").matches){
   const cur=$("#cur"), cur2=$("#cur2"), root=document.documentElement; let tx=-100,ty=-100,x=-100,y=-100,shown=false;
@@ -966,7 +1038,7 @@ if(matchMedia("(pointer:fine)").matches){
 d3.select(stage).call(zoom.transform,rootT());
 refresh(null); updateVP();
 const hs=location.hash;
-if(hs==="#todo") expandAll(); else if(hs==="#hist"){ KK.root.open=true; KK.may.open=true; refresh(null); setTimeout(()=>{ select(KK.hig); openHist(); },500); } else if(hs.startsWith("#n=")&&KK[hs.slice(3)]) goNode(KK[hs.slice(3)]);
+if(hs==="#todo") expandAll(); else if(hs==="#plano"){ KK.root.open=true; KK.may.open=true; refresh(null); setTimeout(()=>{ select(KK.dep); openPlano(); },500); } else if(hs==="#hist"){ KK.root.open=true; KK.may.open=true; refresh(null); setTimeout(()=>{ select(KK.hig); openHist(); },500); } else if(hs.startsWith("#n=")&&KK[hs.slice(3)]) goNode(KK[hs.slice(3)]);
 </script>
 </body>
 </html>
