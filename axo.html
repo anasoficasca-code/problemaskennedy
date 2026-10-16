@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Axonometría · carga ligera</title>
+<!-- Misma axonometría 3D del proyecto "Humedal El Burro", pero cargando solo lo necesario:
+     sin paneles ni tipografías, con edificios aligerados (las construcciones de 20 m² o más: 93 % del área construida),
+     menos resolución de dibujo y dibujo en pausa mientras no se ve. Los parámetros ?lite=0 y ?noterrain=1 sirven para pruebas. -->
+<base href="https://anasoficasca-code.github.io/humedalburro/">
+<style>
+  html,body{margin:0;height:100%;background:#050505;overflow:hidden}
+  #sceneWrap{position:absolute;inset:0}
+  #sceneCanvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+  .ui{display:none!important}
+</style>
+<script>
+(function(){
+  var P=new URLSearchParams(location.search);
+  // 1) menos píxeles que dibujar (el panel es pequeño)
+  try{ Object.defineProperty(window,"devicePixelRatio",{value:Math.min(window.devicePixelRatio||1,P.get("dpr")?+P.get("dpr"):1.25),configurable:true}); }catch(e){}
+  // 2) el dibujo 3D arranca en pausa tras unos cuadros de calentamiento (el panel lo reanuda al abrirse)
+  window.__gate=1; window.__held=[]; window.__paused=P.get("paused")!=="0"; var warm=P.get("warm")?+P.get("warm"):3, raf=window.requestAnimationFrame.bind(window), noraf=P.get("raf")==="0";
+  window.requestAnimationFrame=function(cb){ return raf(function(t){ if(noraf) return; if(window.__paused&&warm<=0){ window.__held.push(cb); } else { warm--; cb(t); } }); };
+  // 3) archivos más livianos
+  var lite=P.get("lite")!=="0", base="https://anasoficasca-code.github.io/problemaskennedy/assets/lite/", of=window.fetch.bind(window);
+  window.fetch=function(u,o){ try{ var s=typeof u==="string"?u:u.url;
+    if(lite&&/kennedy_buildings\.json/.test(s)) return of(base+"buildings.json",o);
+    if(P.get("noterrain")==="1"&&/kennedy_terreno\.json/.test(s)) return Promise.resolve(new Response("{}",{status:404}));
+  }catch(e){} return of(u,o); };
+})();
+</script>
+</head>
+<body>
+<div id="sceneWrap"><canvas id="sceneCanvas"></canvas></div>
+<div class="ui">
+  <span id="eraBadge"></span><p id="eraDesc"></p><p id="eraNota"></p><aside id="epPanel"></aside>
+  <div id="controlsBar"><button id="histPlayPause"></button>
+    <button class="year-btn active" data-year="1900"></button><button class="year-btn" data-year="1930"></button><button class="year-btn" data-year="1950"></button><button class="year-btn" data-year="1956"></button>
+    <button class="year-btn" data-year="1972"></button><button class="year-btn" data-year="1988"></button><button class="year-btn" data-year="1995"></button><button class="year-btn" data-year="2024"></button>
+    <input type="range" id="histYearSlider" min="0" max="7" value="0" step="1"><div id="timelineTicks"></div></div>
+  <div id="statusOverlay" class="hide"></div>
+  <div id="treeInfo"><button id="treeInfoClose"></button><p class="tree-info-kind"></p><h3 id="treeInfoName"></h3><p id="treeInfoDetails"></p></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="assets/vendor/polygon-clipping.umd.min.js?v=1"></script>
+<script src="modulo-08-3d.js?v=280"></script>
+</body></html>
