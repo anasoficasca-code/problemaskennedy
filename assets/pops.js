@@ -110,7 +110,7 @@ function setPad(w){ try{ popPad=w; }catch(e){} }
 function stopAll(){ cancelAnimationFrame(raf); raf=0; timers.forEach(clearTimeout); timers=[]; }
 function head(titulo,sub,extra){ return `<div class="pl-h"><i>${extra||""}</i><div><b>${titulo}</b><span>${sub}</span></div><div class="sp" id="ppBtns"></div></div>`; }
 function closeBtn(){ const b=document.createElement("button"); b.setAttribute("aria-label","Cerrar"); b.innerHTML=icon("X",2.2); b.onclick=close; $("#ppBtns").appendChild(b); }
-function close(){ cur=null; curR=null; stopAll(); setPad(0); if(pp){ pp.classList.remove("show"); pp.innerHTML=""; } }
+function close(){ cur=null; stopAll(); setPad(0); if(pp){ pp.classList.remove("show"); pp.innerHTML=""; } }
 function show(w){ ensure(); pp.classList.add("show"); const mob=isMobile(); pp.style.width= mob?"auto":w+"px"; setPad(mob?0:w+30); }
 
 /* ================= 1) cadena campesinos → dependencia alimentaria ================= */
@@ -198,142 +198,17 @@ function openClusters(){
     raf=requestAnimationFrame(loop); }; raf=requestAnimationFrame(loop);
 }
 
-/* ================= 4) escenas esquemáticas (negras, animadas) para el resto de variables ================= */
-const SXCSS=`
-.sx svg{display:block;width:100%;height:auto;background:#050505;border-radius:12px}
-.sx-t{font:600 10.5px var(--mono);letter-spacing:1.2px;text-transform:uppercase;fill:#cfcfcf}
-.sx-s{font:500 9.5px var(--sans);fill:#8e8e8e}
-.px-m{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.px-r{display:grid;grid-template-columns:92px 1fr 64px;gap:10px;align-items:center;font:500 11px var(--sans);color:#cfcfcf}
-.px-b{position:relative;height:10px;border-radius:6px;background:#161616}
-.px-b i{display:block;height:100%;width:0;border-radius:6px;background:var(--c);animation:mfill 2.6s cubic-bezier(.2,.8,.2,1) forwards}
-.px-b u{position:absolute;left:62%;top:-4px;bottom:-4px;width:0;border-left:1.5px dashed #fff;opacity:.7}
-.px-r em{font:600 9.5px var(--mono);letter-spacing:.8px;color:#ff7a5c;font-style:normal;text-transform:uppercase;opacity:0;animation:sqshow .5s 2.4s forwards}
-.px-cap{font:500 9.5px var(--mono);letter-spacing:1px;color:#8e8e8e;text-transform:uppercase;margin-top:6px}
-@keyframes mfill{to{width:calc(var(--v)*62%)}}
-@keyframes sqshow{to{opacity:1}}
-.sx-seg{display:inline-flex;gap:6px;margin:10px 0 0}
-.sx-seg button{height:30px;padding:0 12px;border-radius:9px;border:1px solid #333;background:#161616;color:#ddd;font:500 11.5px var(--sans);cursor:pointer}
-.sx-seg button.on{background:#f4f4f4;color:#000;border-color:#f4f4f4}
-.sx-leg{display:flex;align-items:center;gap:8px;font:500 10px var(--mono);letter-spacing:.8px;color:#8e8e8e;text-transform:uppercase;margin-top:8px}
-.sx-leg i{flex:1;height:7px;border-radius:4px}
-.gcell{transition:fill 1s ease}
-.rd{animation:rdrop 1.4s linear infinite}
-@keyframes rdrop{0%{transform:translateY(-10px);opacity:0}15%{opacity:1}100%{transform:translateY(128px);opacity:0}}
-.ia{animation:iinf 2.2s ease-in infinite;opacity:0}
-@keyframes iinf{0%{transform:translateY(0);opacity:0}30%{opacity:1}100%{transform:translateY(26px);opacity:0}}
-.ro{animation:rrun 1.8s linear infinite;opacity:0}
-@keyframes rrun{0%{transform:translateX(0);opacity:0}15%{opacity:1}100%{transform:translateX(120px);opacity:0}}
-.cn{transform-box:fill-box;transform-origin:bottom;animation:clvl 5s ease-in-out infinite alternate}
-@keyframes clvl{from{transform:scaleY(.25)}to{transform:scaleY(1)}}
-.sm{transform-box:fill-box;transform-origin:center;animation:ssm 3.4s ease-out infinite;opacity:0}
-@keyframes ssm{0%{transform:translateY(0) scale(.5);opacity:0}15%{opacity:.8}100%{transform:translateY(-70px) scale(2.4);opacity:0}}
-.cr{animation:scr 6s linear infinite}
-@keyframes scr{from{transform:translateX(-70px)}to{transform:translateX(640px)}}
-.bd{transform-box:fill-box;transform-origin:bottom;animation:sbd 5.5s ease-in-out infinite alternate}
-@keyframes sbd{from{transform:scaleY(.3)}to{transform:scaleY(1)}}
-.drip{animation:sdrip 1.2s ease-in infinite;opacity:0}
-@keyframes sdrip{0%{transform:translateY(0);opacity:0}25%{opacity:1}100%{transform:translateY(22px);opacity:0}}
-.stg{transition:opacity .3s}.stg.dim{opacity:.35}
-.hlp{animation:shl 1.6s ease-in-out infinite}
-@keyframes shl{50%{opacity:.35}}
-`;
-const stx=document.createElement("style"); stx.textContent=SXCSS; document.head.appendChild(stx);
-const svgI=(name,x,y,sz,col)=>`<g style="color:${col||"#eee"}">${icon(name,1.9).replace("<svg ",`<svg x="${x}" y="${y}" width="${sz}" height="${sz}" `)}</g>`;
-const PCOL=()=>({c1:(typeof P!=="undefined"?P.c1:"#d9755f"),c2:(typeof P!=="undefined"?P.c2:"#cdae67"),c3:(typeof P!=="undefined"?P.c3:"#6fb1a7")});
-function meters(list,cap){ return `<div class="px-m">${list.map(m=>`<div class="px-r"><span>${m.n}</span><div class="px-b" style="--c:${m.c};--v:${m.v}"><i></i><u></u></div><em>${m.v>1?"supera":"cerca"}</em></div>`).join("")}</div><div class="px-cap">┆ ${cap}</div>`; }
-function sceneShell(title,sub,ic,body,note,w){ ensure(); pp.classList.add("dark"); pp.innerHTML=head(title,sub,icon(ic,2))+`<div class="sx">${body}</div><div class="note">${note}</div>`; closeBtn(); show(w); }
-
-/* a) del andén al humedal */
-function openWater(key){
-  const C=PCOL(), st=[["Andén","Trash2",C.c2,["res","desc"]],["Alcantarillado","Gauge",C.c2,["san"]],["Escorrentía","Droplets",C.c3,["aguasres","cargas"]],["Humedal El Burro","Droplet",C.c3,["calagua"]]];
-  let g="",paths="",parts="";
-  st.forEach((s,i)=>{ const x=22+i*148, on=s[3].includes(key); g+=`<g class="stg${on||!key||key==="x"?"":" dim"}"><rect x="${x}" y="40" width="112" height="62" rx="14" fill="#0c0c0c" stroke="${s[2]}" stroke-width="${on?3:1.6}"/>${svgI(s[1],x+10,59,24,s[2])}<text class="sx-t" x="${x+40}" y="68" style="font-size:9.5px">${s[0].split(" ")[0]}</text><text class="sx-s" x="${x+40}" y="82">${s[0].split(" ").slice(1).join(" ")||["residuos","colapsa","carga","recibe"][i]}</text></g>`;
-    if(i<3){ const a=x+112, b=x+148; paths+=`<path id="wp${i}" d="M${a} 71L${b} 71" stroke="#444" stroke-width="2" stroke-dasharray="4 4" fill="none"/>`; for(let j=0;j<4;j++) parts+=`<circle r="${3+i*.9}" fill="${i<2?C.c2:C.c3}"><animateMotion dur="1.8s" begin="${(j*.45+i*.2).toFixed(2)}s" repeatCount="indefinite"><mpath href="#wp${i}"/></animateMotion></circle>`; } });
-  let drips=""; for(let k=0;k<5;k++) drips+=`<circle class="drip" cx="${170+k*18}" cy="104" r="2.6" fill="#ff7a5c" style="animation-delay:${(k*.25).toFixed(2)}s"/>`;
-  const body=`<svg viewBox="0 0 600 150"><text class="sx-t" x="22" y="24">Del desecho al humedal</text>${paths}${g}${parts}${drips}<text class="sx-s" x="22" y="136">Generación masiva de desechos → colapso del alcantarillado → impacto hídrico por escorrentía</text></svg>`+
-    meters([{n:"DBO₅",v:1.38,c:C.c1},{n:"Nitrógeno",v:1.22,c:C.c2},{n:"Fósforo",v:1.3,c:C.c3}],"Capacidad de los humedales");
-  sceneShell("Del desecho al humedal","Saturación de los residuos",key==="calagua"?"Droplets":"Trash2",body,"Esquema ilustrativo del encadenamiento. Las proporciones de las barras no son mediciones.",660);
-}
-/* b) lluvia sobre suelo permeable vs. sellado */
-function openRain(){
-  let rain="",arr="",run="",x0;
-  for(let i=0;i<9;i++){ const x=20+i*30; rain+=`<line class="rd" x1="${x}" y1="30" x2="${x-4}" y2="42" stroke="#6fb1ff" stroke-width="2" stroke-linecap="round" style="animation-delay:${(i*.17).toFixed(2)}s"/>`; }
-  for(let i=0;i<9;i++){ const x=330+i*30; rain+=`<line class="rd" x1="${x}" y1="30" x2="${x-4}" y2="42" stroke="#6fb1ff" stroke-width="2" stroke-linecap="round" style="animation-delay:${(i*.17+.08).toFixed(2)}s"/>`; }
-  for(let i=0;i<6;i++) arr+=`<path class="ia" d="M${40+i*46} 168l0 14m-5-5l5 6 5-6" stroke="#6fb1ff" stroke-width="2" fill="none" stroke-linecap="round" style="animation-delay:${(i*.3).toFixed(2)}s"/>`;
-  for(let i=0;i<5;i++) run+=`<ellipse class="ro" cx="${340+i*8}" cy="160" rx="9" ry="2.6" fill="#6fb1ff" style="animation-delay:${(i*.35).toFixed(2)}s"/>`;
-  const body=`<svg viewBox="0 0 600 250"><text class="sx-t" x="20" y="18">Suelo permeable</text><text class="sx-t" x="330" y="18">Suelo sellado</text>
-   <rect x="0" y="150" width="290" height="46" fill="#2b5d46"/><rect x="0" y="196" width="290" height="40" fill="#18384f"/><text class="sx-s" x="14" y="228">Acuífero · recarga</text>
-   <rect x="310" y="150" width="236" height="12" fill="#3a3a3a"/><rect x="310" y="162" width="236" height="74" fill="#1c1c1c"/><rect x="546" y="150" width="54" height="86" fill="#18384f"/><rect class="cn" x="546" y="150" width="54" height="86" fill="#2a78b5" opacity=".7"/>
-   <text class="sx-s" x="318" y="205">Asfalto y concreto: el agua no entra</text><text class="sx-s" x="552" y="144">canal</text>
-   ${rain}${arr}${run}</svg>`;
-  sceneShell("Lluvia sobre suelo sellado","Impermeabilización del suelo","CloudRain",body,"Esquema ilustrativo: donde el suelo se sella, el agua escurre hacia el humedal en vez de infiltrarse.",640);
-}
-/* c) cuadrícula 2020 → 2026 (calor · comercio · corredores verdes) */
-function openGrid(kind){
-  const C=PCOL(), NX=30, NY=15, mix=(a,b,t)=>{ const A=parseInt(a.slice(1),16),B=parseInt(b.slice(1),16); const r=(A>>16)+(((B>>16)-(A>>16))*t)|0,g=(A>>8&255)+(((B>>8&255)-(A>>8&255))*t)|0,bl=(A&255)+(((B&255)-(A&255))*t)|0; return "#"+((1<<24)+(r<<16)+(g<<8)+bl).toString(16).slice(1); };
-  const rnd=(s=>()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; })(kind.length*7+3), noise=[]; for(let i=0;i<NX*NY;i++) noise.push(rnd());
-  const cx=12, cy=8, cfg={
-    calor:{t:"Islas de calor",s:"Mancha térmica 2020 → 2026",ic:"Mountain",lo:"#2a6f78",hi:"#e5484d",mid:"#e7c45a",lab:["Más fresco","Más caliente"],note:"Esquema ilustrativo: la mancha térmica crece donde se pierde cobertura vegetal y evapotranspiración.",
-      f:(i,j,y)=>{ const d=Math.hypot((i-cx)/1.4,(j-cy)*1.1), h=Math.max(0,1-d/ (y?13:8))*.9+noise[j*NX+i]*.18; return Math.min(1,y?h*1.15+.1:h); }},
-    comercio:{t:"Concentración comercial y logística",s:"Núcleos comerciales 2020 → 2026",ic:"Store",lo:"#171717",hi:C.c1,mid:"#7a4a3c",lab:["Residencial","Concentración alta"],note:"Esquema ilustrativo: la concentración se expande desde Corabastos hacia los corredores residenciales colindantes.",
-      f:(i,j,y)=>{ const d=Math.hypot(i-cx,(j-cy)*1.6), av=(Math.abs(j-cy)<=1&&i>cx-(y?12:5)&&i<cx+(y?14:6))||(Math.abs(i-cx-5)<=0&&Math.abs(j-cy)<(y?7:3))||(Math.abs(i-cx+6)<=0&&Math.abs(j-cy)<(y?6:2)); const h=Math.max(0,1-d/(y?9:5))*.95+(av?.38:0)+noise[j*NX+i]*.12; return Math.min(1,h); }},
-    verde:{t:"Soporte ecológico",s:"Corredores ecológicos 2020 → 2026",ic:"Globe",lo:"#1b1b1b",hi:C.c3,mid:"#25483f",lab:["Pavimento","Vegetación conectada"],note:"Esquema ilustrativo: los corredores que conectaban la trama urbana con el humedal se fragmentan por la pavimentación.",
-      f:(i,j,y)=>{ const cor=([3,8,12].includes(j)&&i<24)||([6,14].includes(i)&&j>=3&&j<=12); if(i>=24&&i<=28&&j>=4&&j<=10) return 2; if(!cor) return noise[j*NX+i]*.1; return y?(noise[j*NX+i]<.3?.9:.05):.95; }}
-  }[kind];
-  let cells=""; for(let j=0;j<NY;j++) for(let i=0;i<NX;i++) cells+=`<rect class="gcell" data-i="${i}" data-j="${j}" x="${i*20}" y="${j*20}" width="18" height="18" rx="3"/>`;
-  const body=`<svg viewBox="0 0 600 300">${cells}${kind==="verde"?`<text class="sx-t" x="492" y="222" fill="#7fd0ff" style="fill:#7fd0ff">Humedal</text>`:`<g><circle cx="${cx*20+9}" cy="${cy*20+9}" r="14" fill="none" stroke="#fff" stroke-width="2"><animate attributeName="r" values="10;26;10" dur="2.6s" repeatCount="indefinite"/><animate attributeName="opacity" values=".9;0;.9" dur="2.6s" repeatCount="indefinite"/></circle><text class="sx-t" x="${cx*20+22}" y="${cy*20-8}" style="fill:#fff">Corabastos</text></g>`}</svg>
-   <div class="sx-seg"><button data-y="0" class="on">2020</button><button data-y="1">2026</button></div><div class="sx-leg"><span>${cfg.lab[0]}</span><i style="background:linear-gradient(90deg,${cfg.lo},${cfg.mid},${cfg.hi})"></i><span>${cfg.lab[1]}</span></div>`;
-  sceneShell(cfg.t,cfg.s,cfg.ic,body,cfg.note,640);
-  const rects=[...pp.querySelectorAll(".gcell")], btns=[...pp.querySelectorAll(".sx-seg button")]; let yr=0;
-  const paint=y=>{ yr=y; btns.forEach(b=>b.classList.toggle("on",+b.dataset.y===y)); rects.forEach(r=>{ const v=cfg.f(+r.dataset.i,+r.dataset.j,y); r.setAttribute("fill",v===2?"#2a78b5":v<.5?mix(cfg.lo,cfg.mid,v*2):mix(cfg.mid,cfg.hi,(v-.5)*2)); }); };
-  paint(0); btns.forEach(b=>b.onclick=()=>{ stopAll(); paint(+b.dataset.y); });
-  const tick=()=>{ if(cur!=="g"+kind) return; paint(yr?0:1); timers.push(setTimeout(tick,3600)); }; cur="g"+kind; timers.push(setTimeout(()=>{ paint(1); timers.push(setTimeout(tick,3600)); },1400));
-}
-/* d) aire */
-function openAir(){
-  const C=PCOL(); let sm="",cars="",b="";
-  [[40,70,110],[120,40,140],[200,90,90],[270,55,125],[350,100,80],[420,60,120],[500,85,95]].forEach(([x,w,h],i)=>{ b+=`<rect x="${x}" y="${170-h}" width="${w-8}" height="${h}" fill="#171717" stroke="#2a2a2a"/>`; });
-  [[150,60],[300,95]].forEach(([x,h],i)=>{ b+=`<rect x="${x}" y="${170-h-40}" width="14" height="40" fill="#222"/>`; for(let k=0;k<4;k++) sm+=`<circle class="sm" cx="${x+7}" cy="${170-h-40}" r="9" fill="${i?C.c2:C.c1}" style="animation-delay:${(k*.85+i*.4).toFixed(2)}s"/>`; });
-  for(let k=0;k<3;k++){ cars+=`<g class="cr" style="animation-delay:${(-k*2).toFixed(1)}s"><rect x="0" y="176" width="34" height="12" rx="4" fill="#cfcfcf"/><circle class="sm" cx="-4" cy="178" r="4" fill="${C.c1}" style="animation-delay:${(k*.3).toFixed(1)}s"/></g>`; }
-  const body=`<svg viewBox="0 0 600 200"><text class="sx-t" x="20" y="20">Industria y tráfico vehicular</text><rect x="0" y="170" width="600" height="30" fill="#0d0d0d"/><line x1="0" y1="185" x2="600" y2="185" stroke="#333" stroke-dasharray="14 12"/>${b}${sm}${cars}</svg>`+
-   meters([{n:"NO₂",v:1.35,c:C.c1},{n:"CO",v:1.18,c:C.c2},{n:"CH₄",v:1.1,c:C.c3}],"Capacidad de dispersión del ecosistema");
-  sceneShell("El aire se satura","Presión sobre el aire","Wind",body,"Esquema ilustrativo: la acumulación de dióxido de nitrógeno, monóxido de carbono y metano supera la capacidad de dispersión.",640);
-}
-/* e) crecer hacia arriba */
-function openHeight(){
-  const C=PCOL(); let b="";
-  [[30,50,160],[100,44,200],[165,56,140],[240,40,210],[305,52,170],[375,46,190],[440,54,150],[510,40,180]].forEach(([x,w,h],i)=>{ let win=""; for(let r=0;r<Math.floor(h/16);r++) for(let c=0;c<2;c++) win+=`<rect x="${x+8+c*(w/2-4)}" y="${196-h+8+r*16}" width="${w/2-12}" height="7" fill="${C.c1}" opacity=".5"/>`; b+=`<g class="bd" style="animation-delay:${(i*.35).toFixed(2)}s"><rect x="${x}" y="${196-h}" width="${w}" height="${h}" rx="3" fill="#141414" stroke="#333"/>${win}</g>`; });
-  const body=`<svg viewBox="0 0 600 230"><text class="sx-t" x="20" y="20">Más vivienda en el mismo suelo</text><rect x="0" y="196" width="600" height="34" fill="#0d0d0d"/>${b}
-   <g style="color:${C.c2}"><path d="M560 60 v-28 m-8 8 l8 -10 l8 10" stroke="${C.c2}" stroke-width="2.4" fill="none" stroke-linecap="round"><animateTransform attributeName="transform" type="translate" values="0 8;0 -8;0 8" dur="2.4s" repeatCount="indefinite"/></path><text class="sx-t" x="520" y="76" style="fill:${C.c2}">Precio</text></g></svg>`+
-   meters([{n:"Densidad",v:1.3,c:C.c1},{n:"Especulación",v:1.25,c:C.c2},{n:"Suelo disponible",v:.35,c:C.c3}],"Límite del suelo urbano");
-  sceneShell("Crecer hacia arriba","Densificación · especulación · escasez de suelo","Building2",body,"Esquema ilustrativo: la densificación en altura y la especulación del suelo concentran la residencia donde ya no queda suelo.",640);
-}
-/* f) planificación: concentrada vs. descentralizada */
-function openPlan(){
-  const C=PCOL(); let h1="",h2="",id=0;
-  const sat=(cx,cy,n,r,rot,tx,ty,pre)=>{ let o=""; for(let i=0;i<n;i++){ const a=rot+i/n*6.283, x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r*.72, pid=pre+(id++); o+=`<path id="${pid}" d="M${x.toFixed(1)} ${y.toFixed(1)}L${tx} ${ty}" stroke="#555" stroke-width="1.4" fill="none"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="#2a2a2a" stroke="#777"/><circle r="3" fill="${C.c1}"><animateMotion dur="${(1.6+(i%3)*.4).toFixed(1)}s" begin="${(i*.2).toFixed(1)}s" repeatCount="indefinite"><mpath href="#${pid}"/></animateMotion></circle>`; } return o; };
-  h1=sat(300,115,12,98,.2,300,115,"pa")+`<circle cx="300" cy="115" r="22" fill="${C.c1}" stroke="#fff" stroke-width="2"><animate attributeName="r" values="20;25;20" dur="1.8s" repeatCount="indefinite"/></circle><text class="sx-t" x="300" y="158" text-anchor="middle" style="fill:#fff">Corabastos</text>`;
-  [[130,110],[300,70],[470,115]].forEach(([x,y],k)=>{ h2+=sat(x,y,5,48,k,x,y,"pb")+`<circle cx="${x}" cy="${y}" r="13" fill="${[C.c1,C.c2,C.c3][k]}" stroke="#fff" stroke-width="1.6"/>`; });
-  const body=`<svg viewBox="0 0 600 230"><g id="plA">${h1}</g><g id="plB" style="display:none">${h2}</g></svg><div class="sx-seg"><button data-m="a" class="on">Orientada al mercado</button><button data-m="b">Descentralizada</button></div>`;
-  sceneShell("Planificación urbana","Orientada al mercado y no a la descentralización","PencilRuler",body,"Esquema ilustrativo: cuando todo converge en un solo nodo, la infraestructura incentiva más clústeres y cierra el ciclo.",640);
-  const bt=[...pp.querySelectorAll(".sx-seg button")]; bt.forEach(b=>b.onclick=()=>{ bt.forEach(x=>x.classList.toggle("on",x===b)); $("#plA").style.display=b.dataset.m==="a"?"":"none"; $("#plB").style.display=b.dataset.m==="b"?"":"none"; });
-}
-
 /* ================= enrutador por tarjeta ================= */
-const ROUTE={exp:"story",crec:"story",mod:"story",perd:"story",trans:"tm",desp:"tm",sinc:"tm",cult:"tm",clust:"cl",conc:"cl",monoc:"cl",econag:"cl",
-  res:"water",desc:"water",san:"water",aguasres:"water",cargas:"water",calagua:"water",imperm:"rain",suelo:"rain",lluvia:"rain",supcons:"calor",
-  eco:"verde",frag:"verde",perdveg:"verde",hab:"verde",biodiv:"verde",may:"comercio",aire:"aire",no2:"aire",esp:"height",esc:"height",plan:"plan"};
-const OPEN={story:openStory,tm:openTM,cl:openClusters,water:openWater,rain:openRain,calor:()=>openGrid("calor"),comercio:()=>openGrid("comercio"),verde:()=>openGrid("verde"),aire:openAir,height:openHeight,plan:openPlan};
-let curR=null;
+const ROUTE={exp:"story",crec:"story",mod:"story",perd:"story",trans:"tm",desp:"tm",sinc:"tm",cult:"tm",clust:"cl"};
 window.POPS={
   route:k=>ROUTE[k]||null,
   click(key){
-    const r=ROUTE[key]; if(!r){ close(); curR=null; return; }
-    if(curR!==r||r==="water"){ stopAll(); OPEN[r](key); curR=r; }
+    const r=ROUTE[key]; if(!r){ close(); return; }
+    if(cur!==r){ stopAll(); (r==="story"?openStory:r==="tm"?openTM:openClusters)(key); }
     if(r==="story"){ const i=STEPS.findIndex(s=>s.k===key); if(i>=0) setStep(i,false); }
   },
   close
-};window.addEventListener("keydown",e=>{ if(e.key==="Escape") close(); });
+};
+window.addEventListener("keydown",e=>{ if(e.key==="Escape") close(); });
 window.addEventListener("resize",()=>{ if(cur==="tm"&&window.BOG) sizeTM(); });
 })();
