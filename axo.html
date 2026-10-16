@@ -22,8 +22,9 @@
   // 3) archivos más livianos
   var lite=P.get("lite")!=="0", base="https://anasoficasca-code.github.io/problemaskennedy/assets/lite/", of=window.fetch.bind(window);
   window.fetch=function(u,o){ try{ var s=typeof u==="string"?u:u.url;
-    if(lite&&/kennedy_buildings\.json/.test(s)) return of(base+"buildings.json",o);
-    if(P.get("noterrain")==="1"&&/kennedy_terreno\.json/.test(s)) return Promise.resolve(new Response("{}",{status:404}));
+    if(lite&&/kennedy_buildings\.json/.test(s)) return of(base+"b2.json",o);
+    if(P.get("terrain")!=="1"&&/kennedy_terreno\.json/.test(s)) return Promise.resolve(new Response("{}",{status:404}));
+    if(P.get("veh")!=="1"&&/kennedy_vehiculos\.json/.test(s)) return Promise.resolve(new Response("[]",{status:404}));
   }catch(e){} return of(u,o); };
 })();
 </script>
