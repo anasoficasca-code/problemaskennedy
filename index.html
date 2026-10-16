@@ -655,6 +655,7 @@ all.forEach(n=>{
   e.addEventListener("click",ev=>{ ev.stopPropagation(); if(moved) return;
     if(n===DATA&&introStage===0&&!isMobile()){ introStage=1; ripple(n); select(n); $("#hint").innerHTML=icon("MousePointerClick",2)+"Haz clic otra vez en la Fragmentación Territorial para ver los 3 problemas"; refresh(null); zoomTo(all,2400); return; }
     if(n===DATA&&introStage===1) introStage=2;
+    if(n.key==="may") setTimeout(()=>{ try{ preloadHist(); }catch(e){} },1500);
     if(!inHig(n)) closeHist(); if(n.key!=="dep") closePlano(); popClick(n); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig"){ if(hpOpen) closeHist(); else setTimeout(openHist,300); }
     if(n.key==="dep"){ if(plOpen) closePlano(); else setTimeout(openPlano,300); } });
   e.addEventListener("mouseenter",()=>focusLine(n)); e.addEventListener("mouseleave",()=>focusLine(null));
@@ -806,15 +807,22 @@ $("#bProp").onclick=()=>runProp();
 
 /* ============ Evolución histórica: panel pequeño sobre Higiene estatal (solo 1900 y 1972) ============ */
 const HURL="https://anasoficasca-code.github.io/humedalburro/problematicas.html";
-const CAP={ 1900:`<b>1900 · Antes de Kennedy</b> — la laguna El Tintal (chucua, el humedal), con ganado en pastoreo y más árboles.`,
-            1972:`<b>20 de julio de 1972 · Se inaugura Corabastos</b> — predio de unos 420.000 m².` };
+const CAP={ 1900:`<b>1900 · Antes de Kennedy</b> — solo el predio: el terreno donde luego se levantaría Corabastos, junto a la laguna El Tintal.`,
+            1972:`<b>20 de julio de 1972 · Se inaugura Corabastos</b> — ya construido, con su predio de unos 420.000 m².` };
+const HF_ERA={1900:1972,1972:1988};   // época real de la axonometría que se muestra detrás de cada botón
 let hpOpen=false, hpYear=1900, hpBuilt=false;
 // misma página del proyecto (mismo dominio): se oculta su interfaz y queda solo la vista axonométrica 3D
 const HF_CSS=`.hud-title,.ep,.controls-bar,.tools-panel,.left-poly-panel,.tf,.tree-info,#marcadoresMapa,#marcasCierre,.status-overlay,#eraBadge{display:none!important}
 html,body{background:#050505!important;overflow:hidden!important}
 html,body,canvas{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><circle cx='14' cy='14' r='10' fill='none' stroke='%23d9755f' stroke-width='2'/><circle cx='14' cy='14' r='3' fill='%23d9755f'/></svg>") 14 14,crosshair!important}`;
 function hfInject(){ try{ const d=$("#hf").contentDocument; if(!d||!d.head) return false; if(!d.getElementById("kn-style")){ const s=d.createElement("style"); s.id="kn-style"; s.textContent=HF_CSS; d.head.appendChild(s); } return true; }catch(e){ return false; } }
-function hfYear(y){ try{ const b=$("#hf").contentDocument.querySelector('.year-btn[data-year="'+y+'"]'); if(b) b.click(); }catch(e){} }
+function hfYear(y){ try{ const b=$("#hf").contentDocument.querySelector('.year-btn[data-year="'+HF_ERA[y]+'"]'); if(b){ b.click(); return true; } }catch(e){} return false; }
+function hfReady(){ try{ const s=$("#hf").contentWindow.__estadoHistorico&&$("#hf").contentWindow.__estadoHistorico(); return !!s&&s.anio===HF_ERA[hpYear]&&s.edificiosTotales>0; }catch(e){ return false; } }
+let hfPoll=0;
+function hfWait(){   // muestra "cargando" solo hasta que los edificios ya están construidos
+  clearInterval(hfPoll); const hl=document.querySelector("#hp .hload"); if(!hl) return; if(hfReady()){ hl.classList.add("off"); return; } hl.classList.remove("off");
+  let n=0; hfPoll=setInterval(()=>{ n++; if(hfReady()){ clearInterval(hfPoll); hl.classList.add("off"); return; } if(n%8===0) hfYear(hpYear); if(n>300){ clearInterval(hfPoll); hl.classList.add("off"); } },300);
+}
 function hfGate(){ try{ const w=$("#hf").contentWindow; if(!w||w.__gate) return; w.__gate=1; w.__held=[]; w.__paused=!hpOpen; const raf=w.requestAnimationFrame.bind(w); w.requestAnimationFrame=cb=>raf(t=>{ if(w.__paused) w.__held.push(cb); else cb(t); }); }catch(e){} }
 function hfPause(){ try{ const w=$("#hf").contentWindow; if(w&&w.__gate) w.__paused=true; }catch(e){} }
 function hfResume(){ try{ const w=$("#hf").contentWindow; if(w&&w.__gate){ w.__paused=false; const q=w.__held.splice(0); q.forEach(cb=>w.requestAnimationFrame(cb)); } }catch(e){} }
@@ -829,10 +837,10 @@ function hpBuild(){
   hp.querySelector(".hx").onclick=closeHist;
   hp.querySelectorAll(".hd").forEach(b=>b.onclick=()=>hpSetYear(+b.dataset.y));
   const hf=$("#hf"); hf.addEventListener("mouseenter",()=>document.body.classList.add("cur-off")); hf.addEventListener("mouseleave",()=>document.body.classList.remove("cur-off"));
-  hf.addEventListener("load",()=>{ hfInject(); hfGate(); setTimeout(()=>{ hfInject(); hfGate(); hfYear(hpYear); hp.querySelector(".hload").classList.add("off"); },900); });
+  hf.addEventListener("load",()=>{ hfInject(); hfGate(); hfYear(hpYear); hfWait(); setTimeout(()=>{ hfInject(); hfGate(); },300); });
   hpSetYear(1900);
 }
-function hpSetYear(y){ hpYear=y; const hp=$("#hp"); hp.querySelectorAll(".hd").forEach(b=>b.classList.toggle("on",+b.dataset.y===y)); $("#hcap").innerHTML=CAP[y]; hfYear(y); }
+function hpSetYear(y){ hpYear=y; const hp=$("#hp"); hp.querySelectorAll(".hd").forEach(b=>b.classList.toggle("on",+b.dataset.y===y)); $("#hcap").innerHTML=CAP[y]; hfYear(y); hfWait(); }
 function preloadHist(){ hpBuild(); const hf=$("#hf"); if(!hf.dataset.l){ hf.dataset.l="1"; hf.src=HURL; } }
 function placeHP(){
   if(!hpOpen||isMobile()) return;
@@ -976,12 +984,17 @@ function wireSearch(inp,resBox){
 }
 wireSearch($("#q"),$("#res")); wireSearch($("#mq"),$("#mres"));
 
-/* Precarga ligera: solo DESCARGA (sin ejecutar nada) los archivos de la axonometría y de los paneles, cuando el navegador está libre */
-addEventListener("load",()=>setTimeout(()=>{ const go=()=>{
+/* Precarga ligera: solo DESCARGA (sin ejecutar nada) los archivos de la axonometría y de los paneles cuando el navegador está libre.
+   Los datos pesados (terreno y edificios) se guardan en la caché para que la axonometría no tenga que esperar la red. */
+addEventListener("load",()=>setTimeout(()=>{ const go=async()=>{
   const B="https://anasoficasca-code.github.io/humedalburro/";
-  ["https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js",B+"assets/vendor/polygon-clipping.umd.min.js?v=1",B+"modulo-08-3d.js?v=280",B+"panel-epocas.js?v=6",B+"trafico-cierres.js?v=1","https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css","assets/pops.js","assets/bogota-data.js","assets/plano-kennedy.jpg"]
-  .forEach(u=>{ const l=document.createElement("link"); l.rel="prefetch"; l.href=u; document.head.appendChild(l); }); };
-  if("requestIdleCallback" in window) requestIdleCallback(go,{timeout:8000}); else go(); },3500));
+  ["https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js","https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js",B+"assets/vendor/polygon-clipping.umd.min.js?v=1",B+"modulo-08-3d.js?v=280","assets/pops.js","assets/bogota-data.js","assets/plano-kennedy.jpg"]
+    .forEach(u=>{ const l=document.createElement("link"); l.rel="prefetch"; l.href=u; document.head.appendChild(l); });
+  if(isMobile()||(navigator.connection&&(navigator.connection.saveData||/2g/.test(navigator.connection.effectiveType||"")))) return;
+  const DATA=["kennedy_buildings.json","kennedy_terreno.json","kennedy_trees_real.json","kennedy_manzanas.json","kennedy_parques.json","kennedy_water_bodies.json","kennedy_net.json","kennedy_facades.json","kennedy_intersecciones.json","arbol_real4.png","textura_pasto_pastel.jpg","textura_via.jpg","textura_agua_clara.jpg","textura_agua_clara_relieve.jpg"];
+  for(const f of DATA){ try{ const r=await fetch(B+"assets/"+f,{cache:"force-cache",priority:"low"}); await r.arrayBuffer(); }catch(e){} }
+  };
+  if("requestIdleCallback" in window) requestIdleCallback(go,{timeout:6000}); else go(); },1800));
 
 /* ============ Plano animado (PDF de Kennedy) al tocar Dependencia alimentaria ============ */
 const PL={w:912,h:1157,T:[525,725],src:"assets/plano-kennedy.jpg"};   // T = punto de Corabastos, movido hacia "Humedal La Vaca"
