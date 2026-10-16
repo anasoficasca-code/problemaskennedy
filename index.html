@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -99,6 +99,15 @@
   .ri svg{width:15px;height:15px}
   #bSearch{display:none}
   #gchips{display:none}
+  #bPal{width:38px;padding:0}
+  #palpop{position:fixed;right:20px;top:64px;z-index:40;width:250px;padding:10px;background:rgba(8,8,8,.97);border:1px solid var(--line2);border-radius:16px;display:none;flex-direction:column;gap:4px}
+  #palpop.show{display:flex}
+  #palpop h5{font:500 10px var(--mono);letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin:4px 6px 6px}
+  .pitem{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:11px;cursor:pointer;font:500 13px var(--sans);color:#ddd;border:1px solid transparent}
+  .pitem:hover{background:#151515}
+  .pitem.act{border-color:#fff;background:#121212}
+  .sw{display:flex}.sw i{width:20px;height:20px;border-radius:50%;margin-left:-6px;border:2px solid #080808}.sw i:first-child{margin-left:0}
+  .pitem svg{margin-left:auto;width:16px;height:16px;color:#fff}
 
   #hint{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:15;pointer-events:none;display:flex;align-items:center;gap:10px;
     font:500 11px var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--fg);padding:11px 16px;border:1px solid var(--line2);border-radius:30px;background:rgba(5,5,5,.9);
@@ -180,6 +189,7 @@
     #bar{padding:calc(10px + env(safe-area-inset-top)) 12px 8px;gap:8px;flex-wrap:wrap;background:linear-gradient(#000 70%,rgba(0,0,0,0))}
     #brand h1{font-size:15px} .logo{width:36px;height:36px}
     #bSearch{display:inline-flex;width:38px;padding:0}
+    #palpop{right:12px;top:calc(58px + env(safe-area-inset-top))}
     .search{display:none;order:5;width:100%}
     .search.show{display:block}
     #bProp,#bAll,#bReset,#bCtx{display:none}
@@ -209,12 +219,14 @@
   <div id="brand"><div class="logo" id="logo"></div><div><h1>Problemáticas de Kennedy</h1><p>Modelamiento dinámico · red causal</p></div></div>
   <button class="btn" id="bSearch" aria-label="Buscar"></button>
   <div class="search" id="dsearch"></div>
+  <button class="btn" id="bPal" aria-label="Paleta de colores"></button>
   <button class="btn" id="bCtx"></button>
   <button class="btn pri" id="bProp"></button>
   <button class="btn" id="bAll"></button>
   <button class="btn" id="bReset"></button>
   <div id="gchips"></div>
 </div>
+<div id="palpop"></div>
 <div id="hint"></div>
 <div id="legend"></div>
 <div id="zoom"><button class="btn" id="bIn"></button><button class="btn" id="bOut"></button><button class="btn" id="bFit"></button></div>
@@ -228,10 +240,20 @@
 /* =====================================================================
    DATOS: 41 variables y 49 conexiones tal como están en el tablero de Miro
    ===================================================================== */
+// Paletas (la elegida se guarda en el navegador). Se cambia con el botón de paleta de la barra.
+const PALS = {
+  mineral:  { name:"Mineral",  c1:"#d9755f", c2:"#cdae67", c3:"#6fb1a7", root:"#ebe5d9" },
+  mono:     { name:"Monocromo",c1:"#f4f4f4", c2:"#a8a8a8", c3:"#6d6d6d", root:"#ffffff" },
+  oceano:   { name:"Océano",   c1:"#7aa2f7", c2:"#9ece6a", c3:"#bb9af7", root:"#e6ecff" },
+  carmesi:  { name:"Carmesí",  c1:"#e5484d", c2:"#f2f2f2", c3:"#8f8f8f", root:"#ff6a6f" },
+  bosque:   { name:"Bosque",   c1:"#8fbf7f", c2:"#d6c39a", c3:"#5aa6a0", root:"#e9efe0" }
+};
+let PK="mineral"; try{ PK=localStorage.getItem("pal")||"mineral"; }catch(e){}
+const P = PALS[PK]||PALS.mineral;
 const G = {
-  1:{ name:"Hiperconcentración del mercado mayorista", short:"Mercado mayorista",      color:"#ff6b4a", icon:"Store" },
-  2:{ name:"Saturación de los residuos",               short:"Saturación de residuos", color:"#f5c431", icon:"Trash2" },
-  3:{ name:"Degradación del soporte ecológico",        short:"Soporte ecológico",      color:"#38cdf0", icon:"Globe" }
+  1:{ name:"Hiperconcentración del mercado mayorista", short:"Mercado mayorista",      color:P.c1, icon:"Store" },
+  2:{ name:"Saturación de los residuos",               short:"Saturación de residuos", color:P.c2, icon:"Trash2" },
+  3:{ name:"Degradación del soporte ecológico",        short:"Soporte ecológico",      color:P.c3, icon:"Globe" }
 };
 // [clave, texto completo, etiqueta corta, icono, grupo, x, y (tablero)]
 const ND = [
@@ -293,6 +315,7 @@ function icon(name, sw=1.7){
   const d = lucide.icons[name]; if(!d) return "";
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${d[2].map(([t,a])=>`<${t} ${Object.entries(a).map(([k,v])=>`${k}="${v}"`).join(" ")}/>`).join("")}</svg>`;
 }
+const ink = c => { const n=parseInt(c.slice(1),16), l=(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255; return l>.58?"#0a0a0a":"#ffffff"; };
 const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 const isMobile = () => matchMedia("(max-width:760px)").matches;
 
@@ -311,7 +334,7 @@ K.infra.extra.push(K.mono); K.mono.loose=true;
 nodes.forEach(n=>{
   const deg=n.nei.length;
   n.r = n===root?58 : HUBS.includes(n)?36 : n.loose?17 : Math.min(30,Math.max(17,9+deg*3.6));
-  n.color = n.g? G[n.g].color : "#ff5a5f";
+  n.color = n.g? G[n.g].color : P.root;
   n.bridge = n.groups.length>1; n.hub = HUBS.includes(n);
 });
 const hiddenCount = n => n.nei.filter(o=>!o.n.vis).length + n.extra.filter(m=>!m.vis).length;
@@ -349,9 +372,9 @@ $("#dsearch").innerHTML=icon("Search",2)+`<input id="q" placeholder="Buscar vari
 /* ============ SVG: degradados, aristas agrupadas (edge bundling) y nodos ============ */
 const svg=d3.select("#graph"), vp=d3.select("#vp"), stage=$("#stage"), NS="http://www.w3.org/2000/svg", defs=$("#defs");
 const cid=c=>c.slice(1);
-[...Object.values(G).map(g=>g.color),"#ff5a5f"].forEach(c=>{
-  defs.insertAdjacentHTML("beforeend",`<radialGradient id="nd-${cid(c)}" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="${c}" stop-opacity=".95"/><stop offset="1" stop-color="${c}" stop-opacity=".38"/></radialGradient>
-    <radialGradient id="gl-${cid(c)}"><stop offset="0" stop-color="${c}" stop-opacity=".5"/><stop offset=".55" stop-color="${c}" stop-opacity=".12"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`);
+[...Object.values(G).map(g=>g.color),P.root].forEach(c=>{
+  defs.insertAdjacentHTML("beforeend",`<radialGradient id="nd-${cid(c)}" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="${c}" stop-opacity=".9"/><stop offset="1" stop-color="${c}" stop-opacity=".3"/></radialGradient>
+    <radialGradient id="gl-${cid(c)}"><stop offset="0" stop-color="${c}" stop-opacity=".3"/><stop offset=".55" stop-color="${c}" stop-opacity=".07"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`);
 });
 nodes.forEach(n=>{ if(n.bridge){ const a=G[n.groups[0]].color, b=G[n.groups[1]].color;
   defs.insertAdjacentHTML("beforeend",`<linearGradient id="rg-${n.key}" x1="0" y1="0" x2="1" y2="1"><stop offset=".5" stop-color="${a}"/><stop offset=".5" stop-color="${b}"/></linearGradient>`); } });
@@ -395,9 +418,9 @@ nodes.forEach(n=>{
       <circle class="glow" r="${n.r*2.3}" fill="url(#gl-${cid(n.color)})" style="--bd:${(-Math.random()*4).toFixed(2)}s"/>
       <circle class="halo" r="${n.r+7}"/><circle class="pg" r="${n.r}"/>
       <circle r="${n.r}" fill="url(#nd-${cid(n.color)})"/>
-      <circle class="ring" r="${n.r}" stroke="${n===root?"#ffb3b5":ringStroke}"/>
+      <circle class="ring" r="${n.r}" stroke="${n===root?P.root:ringStroke}"/>
       <circle class="selr" r="${n.r+7}"/>
-      <g class="ico" transform="translate(${-12*s*.92},${-12*s*.92}) scale(${s*.92})">${ic?ic[2].map(([t,a])=>`<${t} ${Object.entries(a).map(([k,v])=>`${k}="${v}"`).join(" ")}/>`).join(""):""}</g>
+      <g class="ico" style="stroke:${ink(n.color)}" transform="translate(${-12*s*.92},${-12*s*.92}) scale(${s*.92})">${ic?ic[2].map(([t,a])=>`<${t} ${Object.entries(a).map(([k,v])=>`${k}="${v}"`).join(" ")}/>`).join(""):""}</g>
       <g class="badge" transform="translate(${n.r*.74},${-n.r*.74})"><circle r="11"/><text></text></g>
     </g></g><g class="lblw">${label}</g><title>${n.t}</title>`;
   n.el=g; n.badge=g.querySelector(".badge"); n.badgeT=g.querySelector(".badge text");
@@ -462,12 +485,12 @@ function toggleGroup(g){ gfocus=gfocus===g?0:g; legendFocus();
 /* ============ leyenda / chips ============ */
 const nOf=g=>nodes.filter(n=>n.groups.includes(g)).length;
 $("#legend").innerHTML=`<h4>${icon("Layers",2)}Problemas centrales</h4>`+
-  [1,2,3].map(g=>`<div class="li" data-g="${g}" style="--c:${G[g].color}"><i>${icon(G[g].icon,2)}</i><span>${G[g].name.length>30?G[g].short:G[g].name}</span><b>${nOf(g)}</b></div>`).join("")+
+  [1,2,3].map(g=>`<div class="li" data-g="${g}" style="--c:${G[g].color}"><i style="color:${ink(G[g].color)}">${icon(G[g].icon,2)}</i><span>${G[g].name.length>30?G[g].short:G[g].name}</span><b>${nOf(g)}</b></div>`).join("")+
   `<h4>${icon("Network",2)}Cómo leer la red</h4>
-   <div class="key"><svg viewBox="0 0 34 14"><path d="M1 7H27" stroke="#ff6b4a" stroke-width="2.4" stroke-linecap="round"/><path d="M25 2L33 7L25 12z" fill="#ff6b4a"/></svg>Causa → efecto</div>
+   <div class="key"><svg viewBox="0 0 34 14"><path d="M1 7H27" stroke="${G[1].color}" stroke-width="2.4" stroke-linecap="round"/><path d="M25 2L33 7L25 12z" fill="${G[1].color}"/></svg>Causa → efecto</div>
    <div class="key"><svg viewBox="0 0 34 14"><path d="M1 7H33" stroke="#9a9a9a" stroke-width="2.4" stroke-linecap="round"/></svg>Relación sin dirección</div>
-   <div class="key"><svg viewBox="0 0 34 14"><defs><linearGradient id="kg" gradientUnits="userSpaceOnUse" x1="1" y1="0" x2="27" y2="0"><stop offset="0" stop-color="#ff6b4a"/><stop offset="1" stop-color="#38cdf0"/></linearGradient></defs><path d="M1 7H27" stroke="url(#kg)" stroke-width="3" stroke-linecap="round"/><path d="M25 2L33 7L25 12z" fill="#38cdf0"/></svg>Une dos problemas (degradado)</div>
-   <div class="key"><svg viewBox="0 0 34 14"><circle cx="17" cy="7" r="6" fill="none" stroke="#ff6b4a" stroke-width="3" stroke-dasharray="18.8 18.8" transform="rotate(-45 17 7)"/><circle cx="17" cy="7" r="6" fill="none" stroke="#38cdf0" stroke-width="3" stroke-dasharray="18.8 18.8" stroke-dashoffset="-18.8" transform="rotate(-45 17 7)"/></svg>Variable compartida</div>
+   <div class="key"><svg viewBox="0 0 34 14"><defs><linearGradient id="kg" gradientUnits="userSpaceOnUse" x1="1" y1="0" x2="27" y2="0"><stop offset="0" stop-color="${G[1].color}"/><stop offset="1" stop-color="${G[3].color}"/></linearGradient></defs><path d="M1 7H27" stroke="url(#kg)" stroke-width="3" stroke-linecap="round"/><path d="M25 2L33 7L25 12z" fill="${G[3].color}"/></svg>Une dos problemas (degradado)</div>
+   <div class="key"><svg viewBox="0 0 34 14"><circle cx="17" cy="7" r="6" fill="none" stroke="${G[1].color}" stroke-width="3" stroke-dasharray="18.8 18.8" transform="rotate(-45 17 7)"/><circle cx="17" cy="7" r="6" fill="none" stroke="${G[3].color}" stroke-width="3" stroke-dasharray="18.8 18.8" stroke-dashoffset="-18.8" transform="rotate(-45 17 7)"/></svg>Variable compartida</div>
    <div id="stat"><div><b id="sN">1/41</b><span>Variables</span></div><div><b id="sE">0/49</b><span>Conexiones</span></div></div>`;
 $("#legend").querySelectorAll(".li[data-g]").forEach(l=>l.addEventListener("click",()=>toggleGroup(+l.dataset.g)));
 $("#gchips").innerHTML=[1,2,3].map(g=>`<button class="gch" data-g="${g}" style="--c:${G[g].color}"><i>${icon(G[g].icon,2)}</i>${G[g].short}</button>`).join("");
@@ -481,7 +504,7 @@ function relRow(o){ const m=o.n; return `<div class="rel${m.vis?"":" hid"}" data
 function inspHTML(n){
   const chips=n.groups.filter(g=>g>0).map(g=>`<span class="chip" style="--c:${G[g].color}"><i>${icon(G[g].icon,2.4)}</i>${G[g].short}</span>`).join("");
   const sec=(ic,t,arr)=>arr.length?`<div class="isec">${icon(ic,2)}${t}<b>${arr.length}</b></div>${arr.map(relRow).join("")}`:"";
-  return `<div class="ih" style="--c:${n.color}"><div class="it">${icon(n.i,1.8)}</div><div><div class="ic">${n===root?"Fenómeno central":n.loose?"Variable sin conexiones":"Variable"}</div><h2>${n.t}</h2></div></div>
+  return `<div class="ih" style="--c:${n.color}"><div class="it" style="color:${ink(n.color)}">${icon(n.i,1.8)}</div><div><div class="ic">${n===root?"Fenómeno central":n.loose?"Variable sin conexiones":"Variable"}</div><h2>${n.t}</h2></div></div>
   ${n===root?"":`<div class="chips">${chips}</div>`}
   ${n.bridge?`<div class="isec" style="margin-top:14px">${icon("Link2",2)}Variable compartida entre problemas</div>`:""}
   ${sec("ArrowDownToLine","Causas directas (←)",n.inn)}${sec("ArrowUpFromLine","Efectos directos (→)",n.out)}${sec("Link","Relaciones sin dirección",n.und)}
@@ -582,6 +605,13 @@ function drawStars(){ cx.clearRect(0,0,W,H); stars.forEach(s=>{ const x=((s.x+T.
   inp.addEventListener("blur",()=>setTimeout(()=>res.classList.remove("show"),180));
 })();
 
+/* ============ selector de paleta ============ */
+$("#bPal").innerHTML=icon("Palette",2);
+$("#palpop").innerHTML=`<h5>Paleta de colores</h5>`+Object.entries(PALS).map(([k,p])=>`<div class="pitem${k===PK?" act":""}" data-k="${k}"><span class="sw"><i style="background:${p.c1}"></i><i style="background:${p.c2}"></i><i style="background:${p.c3}"></i><i style="background:${p.root}"></i></span>${p.name}${k===PK?icon("Check",2.4):""}</div>`).join("");
+$("#bPal").onclick=e=>{ e.stopPropagation(); $("#palpop").classList.toggle("show"); };
+$("#palpop").querySelectorAll(".pitem").forEach(el=>el.onclick=()=>{ try{ localStorage.setItem("pal",el.dataset.k); }catch(e){} location.reload(); });
+document.addEventListener("click",e=>{ if(!e.target.closest("#palpop")) $("#palpop").classList.remove("show"); });
+
 /* ============ inicio ============ */
 root.vis=true; svg.call(zoom.transform,homeT()); sizeStars(); refresh();
 const hs=location.hash;
@@ -590,3 +620,4 @@ else if(hs.startsWith("#n=")&&K[hs.slice(3)]) goNode(K[hs.slice(3)]);
 </script>
 </body>
 </html>
+
