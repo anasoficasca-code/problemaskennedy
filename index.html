@@ -270,7 +270,7 @@
   /* página limpia: sin panel de contexto, sin módulo derecho, sin leyenda, minimapa ni botones de zoom */
   #ctx,#bCtx,#mCtx,#insp,#mini,#zoom,#legend{display:none!important}
   /* panel pequeño de evolución histórica, pegado sobre la tarjeta de Higiene estatal */
-  #hp{position:fixed;z-index:60;width:340px;max-width:calc(100vw - 24px);padding:12px 12px 10px;background:rgba(10,10,10,.97);border:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);border-radius:16px;
+  #hp{position:fixed;z-index:60;width:440px;max-width:calc(100vw - 24px);padding:12px 12px 10px;background:rgba(10,10,10,.97);border:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);border-radius:16px;
     box-shadow:0 18px 50px -12px rgba(0,0,0,.85);opacity:0;transform:translateY(10px) scale(.95);pointer-events:none;transition:opacity .35s,transform .5s cubic-bezier(.2,1.25,.3,1);user-select:text;-webkit-user-select:text}
   #hp.show{opacity:1;transform:none;pointer-events:auto}
   #hp::after{content:"";position:absolute;left:calc(var(--ax,50%) - 7px);bottom:-8px;width:14px;height:14px;background:#0a0a0a;border-right:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);border-bottom:1px solid color-mix(in srgb,var(--c,#d9755f) 55%,#000);transform:rotate(45deg)}
@@ -292,8 +292,15 @@
   .hc{display:flex;align-items:flex-start;gap:9px;padding:6px 4px}
   .hci{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 14%,#000);border:1px solid color-mix(in srgb,var(--c) 40%,#000)}.hci svg{width:15px;height:15px}
   .hc b{display:block;font:600 12.5px var(--mono);color:#fff;margin-bottom:1px}.hc p{font:400 11.5px/1.35 var(--sans);color:#bdbdbd}
+  .hv{position:relative;height:250px;border-radius:12px;overflow:hidden;background:#000;border:1px solid var(--line2);margin-top:2px}
+  #hf{width:100%;height:100%;border:0;display:block;background:#000}
+  .hload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;background:#050505;font:500 11px var(--mono);letter-spacing:1px;color:var(--mut);text-transform:uppercase;transition:opacity .6s;pointer-events:none}
+  .hload svg{width:18px;height:18px;animation:hspin 1.4s linear infinite}.hload.off{opacity:0}
+  @keyframes hspin{to{transform:rotate(360deg)}}
+  .hcap{font:400 11.5px/1.4 var(--sans);color:#d2d2d2;margin:8px 2px 0;min-height:32px}.hcap b{color:#fff;font-weight:600}
+  body.cur-off #cur,body.cur-off #cur2{opacity:0!important}
   .hl{display:flex;align-items:center;gap:6px;margin:6px 2px 0;padding-top:8px;border-top:1px solid var(--line);font:500 11px var(--sans);color:#aaa;text-decoration:none}.hl:hover{color:#fff}.hl svg{width:13px;height:13px}
-  @media (max-width:900px){ #hp{left:8px!important;right:8px;top:auto!important;bottom:calc(78px + env(safe-area-inset-bottom));width:auto;max-width:none} #hp::after{display:none} }
+  @media (max-width:900px){ #hp{left:8px!important;right:8px;top:auto!important;bottom:calc(78px + env(safe-area-inset-bottom));width:auto;max-width:none} #hp::after{display:none} .hv{height:38vh} }
 
   /* =========================== MÓVIL =========================== */
   #mob{display:none}
@@ -609,7 +616,7 @@ all.forEach(n=>{
   e.innerHTML=`<div class="glare"></div><div class="wm">${icon(n.i,1.2)}</div><div class="tile">${icon(n.i)}</div><div class="txt"><span class="id">${n.depth===0?"FENÓMENO CENTRAL":"VAR "+n.code}${xb}${n.key==="hig"?`<span class="xb" title="Abre la evolución histórica">${icon("History",2.2)}historia</span>`:""}</span><span class="lb">${n.depth===0?n.t:n.s}</span></div>${n.kids.length?`<div class="cnt"><span>${n.kids.length}</span>${icon("ChevronRight",2.4)}</div>`:""}`;
   e.title=n.t; n.el=e; world.appendChild(e);
   if(n.depth===0) e.classList.add("on");
-  e.addEventListener("click",ev=>{ ev.stopPropagation(); if(moved) return; if(n.key!=="hig") closeHist(); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig"){ if(hpOpen) closeHist(); else setTimeout(openHist,550); } });
+  e.addEventListener("click",ev=>{ ev.stopPropagation(); if(moved) return; if(n.key==="may") setTimeout(preloadHist,900); if(n.key!=="hig") closeHist(); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig"){ if(hpOpen) closeHist(); else setTimeout(openHist,550); } });
   e.addEventListener("mouseenter",()=>focusLine(n)); e.addEventListener("mouseleave",()=>focusLine(null));
   e.addEventListener("mousemove",ev=>{ const r=e.getBoundingClientRect(); e.style.setProperty("--mx",((ev.clientX-r.left)/T.k)+"px"); e.style.setProperty("--my",((ev.clientY-r.top)/T.k)+"px"); });
   if(n.parent){
@@ -759,43 +766,46 @@ $("#bProp").onclick=()=>runProp();
 
 /* ============ Evolución histórica: panel pequeño sobre Higiene estatal (solo 1900 y 1972) ============ */
 const HURL="https://anasoficasca-code.github.io/humedalburro/problematicas.html";
-const ERA={
-  1900:{ nombre:"Antes de Kennedy", fecha:"1900", sub:"La laguna El Tintal (chucua, el humedal)", chips:[
-    ["Droplet","El Tintal","Una sola laguna antes del aeropuerto (en los años 30 se fraccionó en cinco humedales, entre ellos La Vaca)"],
-    ["Wheat","≈750","Ganado vacuno en pastoreo sobre las zonas verdes, por fuera del agua"],
-    ["Trees","","Más árboles: franjas de ribera ampliadas, bosquetes y sabana abierta"]] },
-  1972:{ nombre:"Corabastos", fecha:"20 de julio de 1972", sub:"Se inaugura Corabastos", nota:"La central de abastos, de unos 420.000 m², dinamiza el poblamiento de Patio Bonito y de barrios vecinos.", chips:[
-    ["ShoppingBasket","420.000 m²","Perímetro esquemático del predio de Corabastos, inaugurado en 1972"],
-    ["Droplet","La Vaca ampliada","Se muestran los dos sectores cartografiados del Humedal La Vaca, incluido el ámbito que llega hasta Corabastos"],
-    ["Home","1 piso","Solo edificios de un piso, sin edificios sobre el humedal"],
-    ["Route","","Calles reales; todavía sin avenidas principales"]] }
-};
-let hpOpen=false, hpYear=1900;
-function hpRender(){
-  const hp=$("#hp"), n=KK.hig, e=ERA[hpYear];
+const CAP={ 1900:`<b>1900 · Antes de Kennedy</b> — la laguna El Tintal (chucua, el humedal), con ganado en pastoreo y más árboles.`,
+            1972:`<b>20 de julio de 1972 · Se inaugura Corabastos</b> — predio de unos 420.000 m².` };
+let hpOpen=false, hpYear=1900, hpBuilt=false;
+// misma página del proyecto (mismo dominio): se oculta su interfaz y queda solo la vista axonométrica 3D
+const HF_CSS=`.hud-title,.ep,.controls-bar,.tools-panel,.left-poly-panel,.tf,.tree-info,#marcadoresMapa,#marcasCierre,.status-overlay,#eraBadge{display:none!important}
+html,body{background:#050505!important;overflow:hidden!important}
+html,body,canvas{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28'><circle cx='14' cy='14' r='10' fill='none' stroke='%23d9755f' stroke-width='2'/><circle cx='14' cy='14' r='3' fill='%23d9755f'/></svg>") 14 14,crosshair!important}`;
+function hfInject(){ try{ const d=$("#hf").contentDocument; if(!d||!d.head) return false; if(!d.getElementById("kn-style")){ const s=d.createElement("style"); s.id="kn-style"; s.textContent=HF_CSS; d.head.appendChild(s); } return true; }catch(e){ return false; } }
+function hfYear(y){ try{ const b=$("#hf").contentDocument.querySelector('.year-btn[data-year="'+y+'"]'); if(b) b.click(); }catch(e){} }
+function hpBuild(){
+  if(hpBuilt) return; hpBuilt=true; const hp=$("#hp"), n=KK.hig;
   hp.style.setProperty("--c",n.color); hp.style.setProperty("--ink",ink(n.color));
-  hp.innerHTML=`<div class="hh"><i class="hi">${icon("History",2)}</i><div><b>Evolución histórica</b><span>Del territorio al mercado mayorista</span></div><button class="hx" aria-label="Cerrar">${icon("X",2.2)}</button></div>
-   <div class="htl"><button class="hd${hpYear===1900?" on":""}" data-y="1900"><b>1900</b><small>${ERA[1900].nombre}</small></button><span class="hln"><em>72 años</em></span><button class="hd${hpYear===1972?" on":""}" data-y="1972"><b>1972</b><small>${ERA[1972].nombre}</small></button></div>
-   <div class="hb"><div class="hd1"><small>${e.fecha}</small>${e.sub}</div>${e.nota?`<p class="hnote">${e.nota}</p>`:""}
-   ${e.chips.map(c=>`<div class="hc"><span class="hci">${icon(c[0],2)}</span><div>${c[1]?`<b>${c[1]}</b>`:""}<p>${c[2]}</p></div></div>`).join("")}</div>
-   <a class="hl" href="${HURL}" target="_blank" rel="noopener">${icon("ExternalLink",2)}Ver la página completa de evolución histórica</a>`;
-  hp.querySelector(".hx").onclick=closeHist; hp.querySelectorAll(".hd").forEach(b=>b.onclick=()=>{ hpYear=+b.dataset.y; hpRender(); placeHP(); });
+  hp.innerHTML=`<div class="hh"><i class="hi">${icon("History",2)}</i><div><b>Evolución histórica · axonometría</b><span>Del territorio al mercado mayorista</span></div><button class="hx" aria-label="Cerrar">${icon("X",2.2)}</button></div>
+   <div class="htl"><button class="hd on" data-y="1900"><b>1900</b><small>Antes de Kennedy</small></button><span class="hln"><em>72 años</em></span><button class="hd" data-y="1972"><b>1972</b><small>Corabastos</small></button></div>
+   <div class="hv"><iframe id="hf" title="Axonometría del territorio" allow="fullscreen"></iframe><div class="hload">${icon("Box",2)}Cargando axonometría…</div></div>
+   <div class="hcap" id="hcap"></div>
+   <a class="hl" href="${HURL}" target="_blank" rel="noopener">${icon("ExternalLink",2)}Ver la página completa</a>`;
+  hp.querySelector(".hx").onclick=closeHist;
+  hp.querySelectorAll(".hd").forEach(b=>b.onclick=()=>hpSetYear(+b.dataset.y));
+  const hf=$("#hf"); hf.addEventListener("mouseenter",()=>document.body.classList.add("cur-off")); hf.addEventListener("mouseleave",()=>document.body.classList.remove("cur-off"));
+  hf.addEventListener("load",()=>{ hfInject(); setTimeout(()=>{ hfInject(); hfYear(hpYear); hp.querySelector(".hload").classList.add("off"); },900); });
+  hpSetYear(1900);
 }
+function hpSetYear(y){ hpYear=y; const hp=$("#hp"); hp.querySelectorAll(".hd").forEach(b=>b.classList.toggle("on",+b.dataset.y===y)); $("#hcap").innerHTML=CAP[y]; hfYear(y); }
+function preloadHist(){ hpBuild(); const hf=$("#hf"); if(!hf.dataset.l){ hf.dataset.l="1"; hf.src=HURL; } }
 function placeHP(){
-  if(!hpOpen||isMobile()) return; const hp=$("#hp"), r=KK.hig.el.getBoundingClientRect(), pw=Math.min(340,innerWidth-24), ph=hp.offsetHeight||300;
+  if(!hpOpen||isMobile()) return; const hp=$("#hp"), r=KK.hig.el.getBoundingClientRect(), pw=Math.min(440,innerWidth-24), ph=hp.offsetHeight||440;
   let left=r.left+r.width/2-pw/2; left=Math.max(12,Math.min(innerWidth-pw-12,left));
   let top=r.top-ph-18, below=false; if(top<64){ top=r.bottom+18; below=true; }
   hp.style.left=left+"px"; hp.style.top=top+"px"; hp.classList.toggle("below",below); hp.style.setProperty("--ax",Math.max(24,Math.min(pw-24,r.left+r.width/2-left))+"px");
 }
 function openHist(){
-  hpOpen=true; hpYear=1900; hpRender(); $("#hp").classList.add("show");
+  preloadHist(); hpOpen=true; hpSetYear(1900); $("#hp").classList.add("show");
   if(!isMobile()){ // baja el mapa lo justo para que el panel quede ARRIBA de la tarjeta y no tape las demás
-    const ph=$("#hp").offsetHeight||330, r=KK.hig.el.getBoundingClientRect(), need=ph+96-r.top;
+    const ph=$("#hp").offsetHeight||440, r=KK.hig.el.getBoundingClientRect(), need=ph+86-r.top;
     if(need>0) goto(d3.zoomIdentity.translate(T.x,T.y+need).scale(T.k),900);
   }
   placeHP(); requestAnimationFrame(placeHP);
 }
-function closeHist(){ hpOpen=false; $("#hp").classList.remove("show"); }
+function closeHist(){ hpOpen=false; $("#hp").classList.remove("show"); document.body.classList.remove("cur-off"); }
 addEventListener("keydown",e=>{ if(e.key==="Escape") closeHist(); });
 
 /* ============ Contexto (narrativa de la exposición) ============ */
