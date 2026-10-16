@@ -292,7 +292,7 @@
   .sq-txt{flex:none;width:min(400px,36vw);overflow:auto;padding-right:6px;scrollbar-width:thin;user-select:text;-webkit-user-select:text}
   .sq-txt .kk{display:block;font:500 10.5px var(--mono);letter-spacing:1.8px;color:var(--c);text-transform:uppercase;margin-bottom:8px}
   .sq-txt h2{font:700 clamp(20px,2.1vw,28px)/1.15 var(--sans);margin-bottom:14px;border-left:4px solid var(--c);padding-left:12px}
-  .sq-txt p{font:400 14px/1.65 var(--sans);color:#d6d6d6;margin-bottom:9px;opacity:0;transform:translateY(8px);animation:sqin .7s calc(.5s + var(--k)*2.1s) ease forwards}
+  .sq-txt p{font:400 14px/1.65 var(--sans);color:#d6d6d6;margin-bottom:9px;opacity:0;transform:translateY(8px);animation:sqin .7s calc(.4s + var(--k)*1.2s) ease forwards}
   .sq-scene.show .nchips div,.sq-scene.show .nind,.sq-scene.show .nv{opacity:0;animation:sqin .7s 1.2s ease forwards}
   .sq-scene.show .nchips div{animation-delay:calc(1.6s + var(--k)*.7s)}
   @keyframes sqin{to{opacity:1;transform:none}}
@@ -312,10 +312,10 @@
   @keyframes dnin{from{opacity:0;transform:translateY(10px) scale(.92)}to{opacity:1;transform:none}}
   .de{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:.85;animation:ddraw 1s calc(var(--d) + .35s) ease forwards}
   @keyframes ddraw{to{stroke-dashoffset:0}}
-  .dp{fill:none;stroke:#fff;stroke-width:3.6;stroke-linecap:round;stroke-dasharray:.12 1.4;stroke-dashoffset:.12;opacity:0;animation:dpul 2.6s var(--d) linear infinite}
-  @keyframes dpul{0%{stroke-dashoffset:.12;opacity:1}85%{opacity:1}100%{stroke-dashoffset:-1.4;opacity:0}}
-  .dsel{animation:dring 1.8s 1.2s ease-out infinite;transform-box:fill-box;transform-origin:center}
-  @keyframes dring{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.22)}}
+  .dp{fill:none;stroke:#fff;stroke-width:2.6;stroke-linecap:butt;stroke-dasharray:.07 1.4;stroke-dashoffset:.07;opacity:0;animation:dpul 3.2s var(--d) linear infinite}
+  @keyframes dpul{0%{stroke-dashoffset:.07;opacity:0}8%{opacity:.9}88%{opacity:.9}100%{stroke-dashoffset:-1;opacity:0}}
+  .dsel{animation:dring 2.4s 1.2s ease-in-out infinite}
+  @keyframes dring{0%,100%{opacity:.15}50%{opacity:.85}}
   .sq-foot{position:absolute;left:0;bottom:0;z-index:70;display:flex;align-items:center;gap:18px;padding:0 24px 22px;width:min(760px,100%);flex-wrap:wrap}
   .sq-ctl{display:flex;gap:8px}.sq-ctl .btn{height:40px}.sq-ctl .btn:disabled{opacity:.35;pointer-events:none}
   .sq-dots{display:flex;gap:4px;align-items:center}
@@ -994,9 +994,8 @@ const STEPS=[
    chips:["Pérdida de regulación hídrica por impermeabilización","Colapso de sumideros ambientales por escorrentía e islas de calor","Deterioro ecológico acumulado: menor resiliencia y mayor vulnerabilidad ambiental"] },
  { w:"RESPUESTA", t:"La respuesta social", ic:"Users", g:0, net:["root","may","res","eco"], sel:"root", prop:["root"],
    x:"Sin embargo, para contrarrestar esta fragmentación, evaluamos el potencial de respuesta social mediante el indicador de Organizaciones Comunitarias, que mide la presencia de juntas de acción comunal y cooperativas vinculadas a huertas urbanas y equipamientos. A esto se suma el indicador de Densidad del Conocimiento, que identifica la concentración de capacidades educativas e innovación para transformar el entorno." },
- { w:"RUPTURAS", t:"Las tres rupturas", ic:"Puzzle", g:0, net:["root","may","res","eco"], sel:"root", prop:["root"],
-   x:"El diagrama causal de la fragmentación territorial de Kennedy sintetiza el desequilibrio del territorio, donde la hiperconcentración de Corabastos altera los usos del suelo en tres rupturas.",
-   chips:["Ruptura física y de movilidad: colapso vial del transporte de carga","Ruptura metabólica y ecológica: impermeabilización del suelo, sobrecarga del saneamiento y contaminación del Humedal El Burro","Ruptura en la gobernanza: falta de coordinación e inversión pública para descentralizar el abastecimiento"] }
+ { w:"CONCLUSIÓN", t:"La causa raíz", ic:"Puzzle", g:0, net:["may","dep","trans","no2","aire","eco"], sel:"may", prop:["may"],
+   x:"Al cruzar las capas de análisis, la conclusión fundamental a la que llegamos es que la fragmentación de Kennedy no es una suma de fallas aisladas, sino la consecuencia de una hiperconcentración histórica en Corabastos que opera como la causa raíz del colapso del metabolismo territorial. La dependencia del abastecimiento externo genera un flujo de carga que no solo satura la red vial, sino que desencadena un efecto dominó: acumula residuos, degrada la red hídrica e impermeabiliza el suelo, anulando la capacidad natural de autorregulación del entorno y aislando al Humedal El Burro de sus corredores ecológicos. Por lo tanto, concluimos que resolver esta crisis mediante parches de infraestructura desconectados es inviable; recuperar el territorio exige abordar la causa matriz reequilibrando los flujos de abastecimiento y restaurando la estructura socioecológica de la localidad desde un metabolismo territorial integrado." }
 ];
 const CTX=`<div class="ch"><i>${icon("BookOpen",1.8)}</i><div><h3>El problema en palabras</h3><div class="sub">Relato de la exposición</div></div></div>`+
  STEPS.map(s=>`<div class="part"><div class="tag">${icon(s.ic,2)}${s.t}</div><p>${s.x}</p></div>`).join("");
@@ -1015,12 +1014,16 @@ function sqWrap(t,max){ const w=t.split(" "), L=[]; let c=""; w.forEach(x=>{ if(
 /* diagrama causal: solo las variables de la escena, con las flechas reales del tablero */
 function sqDiagram(s){
   const V=isMobile(), keys=s.net, set=new Set(keys), es=ED.filter(e=>set.has(e[0])&&set.has(e[1])), lay={}; keys.forEach(k=>lay[k]=0);
-  for(let it=0;it<keys.length;it++){ let ch=false; es.forEach(([a,b])=>{ if(lay[b]<=lay[a]&&lay[a]+1<keys.length){ lay[b]=lay[a]+1; ch=true; } }); if(!ch) break; }
+  // se detectan las flechas de retorno (ciclos) para que no desordenen las columnas
+  const back=new Set(), seen={}, onst={}; const dfs=a=>{ seen[a]=1; onst[a]=1; es.forEach((e,i)=>{ if(e[0]!==a) return; if(onst[e[1]]) back.add(i); else if(!seen[e[1]]) dfs(e[1]); }); onst[a]=0; };
+  keys.forEach(k=>{ if(!seen[k]) dfs(k); });
+  for(let it=0;it<keys.length;it++){ let ch=false; es.forEach(([a,b],i)=>{ if(!back.has(i)&&lay[b]<=lay[a]&&lay[a]+1<keys.length){ lay[b]=lay[a]+1; ch=true; } }); if(!ch) break; }
   const cols=[]; keys.forEach(k=>{ (cols[lay[k]]=cols[lay[k]]||[]).push(k); });
   const NC=cols.filter(Boolean).length, rows=Math.max(...cols.filter(Boolean).map(c=>c.length));
   const NW=V?158:184, NH=V?60:66, CW=V?170:222, RH=V?88:92, FS=V?11.5:12.5, WR=V?15:19;
   const pos={}; let ci=0; cols.forEach(c=>{ if(!c) return; c.forEach((k,r)=>{ const o=(rows-c.length)/2+r; pos[k]=V?{x:o*CW+10,y:ci*RH+14,c:ci}:{x:ci*CW+10,y:o*RH+14,c:ci}; }); ci++; });
-  const Wd=V?(rows-1)*CW+NW+20:(NC-1)*CW+NW+20, Hd=V?(NC-1)*RH+NH+28:(rows-1)*RH+NH+28;
+  const hasBack=!V&&es.some(([a,b])=>pos[b].c<=pos[a].c), TOP=hasBack?46:0; if(TOP) keys.forEach(k=>pos[k].y+=TOP);
+  const Wd=V?(rows-1)*CW+NW+20:(NC-1)*CW+NW+20, Hd=(V?(NC-1)*RH+NH+28:(rows-1)*RH+NH+28)+TOP;
   const col=k=>{ const g=K[k].g; return g?G[g].color:P.root; }, uc=[...new Set(keys.map(col))], mid=c=>uc.indexOf(c);
   const dist={}, q=[]; (s.prop||[]).forEach(k=>{ if(set.has(k)){ dist[k]=0; q.push(k); } });
   while(q.length){ const a=q.shift(); es.forEach(([x,y])=>{ if(x===a&&dist[y]==null){ dist[y]=dist[a]+1; q.push(y); } }); }
@@ -1032,7 +1035,7 @@ function sqDiagram(s){
       else if(B.c===A.c){ const r=B.x>A.x, x1=r?A.x+NW:A.x, x2=r?B.x-3:B.x+NW+3, y=A.y+NH/2; d=`M${x1} ${y}L${x2} ${y}`; }
       else { const x1=A.x, y1=A.y+NH/2, x2=B.x, y2=B.y+NH/2; d=`M${x1} ${y1}C${x1-60} ${y1} ${x2-60} ${y2} ${x2-3} ${y2}`; }
     } else if(fw){ const x1=A.x+NW, y1=A.y+NH/2, x2=B.x, y2=B.y+NH/2, k=Math.max(40,(x2-x1)*.5); d=`M${x1} ${y1}C${x1+k} ${y1} ${x2-k} ${y2} ${x2-3} ${y2}`; }
-    else { const x1=A.x+NW/2, y1=A.y, x2=B.x+NW/2, y2=B.y, up=Math.min(y1,y2)-58; d=`M${x1} ${y1}C${x1} ${up} ${x2} ${up} ${x2} ${y2-3}`; }
+    else { const x1=A.x+NW/2, y1=A.y, x2=B.x+NW/2, y2=B.y, up=Math.min(y1,y2)-36; d=`M${x1} ${y1}C${x1} ${up} ${x2} ${up} ${x2} ${y2-3}`; }
     eh+=`<path class="de" pathLength="1" d="${d}" stroke="${c}" ${t==="d"?`marker-end="url(#sqm${mid(c)})"`:""} style="--d:${(.5+A.c*.45).toFixed(2)}s"/>`;
     if(dist[a]!=null) ph+=`<path class="dp" pathLength="1" d="${d}" style="--d:${(2.6+dist[a]*.8).toFixed(2)}s"/>`;
   });
