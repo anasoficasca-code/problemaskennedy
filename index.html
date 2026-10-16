@@ -554,7 +554,7 @@ $("#logo").innerHTML=icon("Network",1.9); $("#mlogo").innerHTML=icon("Network",1
 $("#bProp").innerHTML=icon("Play",2)+"Propagar"; $("#bAll").innerHTML=icon("ListTree",2)+"Expandir todo"; $("#bReset").innerHTML=icon("RotateCcw",2)+"Reiniciar";
 $("#bIn").innerHTML=icon("Plus",2.2); $("#bOut").innerHTML=icon("Minus",2.2); $("#bFit").innerHTML=icon("Maximize",2);
 $("#iClose").innerHTML=icon("X",2); $("#cClose").innerHTML=icon("X",2);
-$("#hint").innerHTML=icon("MousePointerClick",2)+"Haz clic en el nodo central para desplegar el sistema";
+$("#hint").innerHTML=icon("MousePointerClick",2)+"Haz clic en la Fragmentación Territorial para ver la red";
 $("#bCtx").innerHTML=icon("BookOpen",2)+"Contexto"; $("#bPal").innerHTML=icon("Palette",2); $("#mPal").innerHTML=icon("Palette",2);
 $("#mS").innerHTML=icon("Search",2); $("#mP").innerHTML=icon("Play",2.2);
 $("#mAll").innerHTML=icon("ListTree",2)+"Expandir todo"; $("#mReset").innerHTML=icon("RotateCcw",2)+"Reiniciar"; $("#mCtx").innerHTML=icon("BookOpen",2)+"Contexto";
@@ -564,7 +564,7 @@ $("#dsearch").innerHTML=sch("q","res"); $("#msearch").innerHTML=sch("mq","mres")
 /* =====================================================================
    ESTADO ÚNICO: n.open es la fuente de verdad; refresh() sincroniza las dos vistas
    ===================================================================== */
-let sel=null;
+let sel=null, introStage=(isMobile()||location.hash)?2:0;   // 0: solo el fenómeno · 1: red de puntos sin nombre · 2: los 3 problemas y todo lo demás
 function recompute(){ all.forEach(n=>{ n.vis = n.depth===0 || (n.parent.vis && n.parent.open); }); }
 function closeDesc(n){ descendants(n).forEach(d=>d.open=false); }
 function refresh(origin){
@@ -580,7 +580,7 @@ function refresh(origin){
   });
   let vx=0; xedges.forEach(x=>{ const on=x.s.vis&&x.t.vis; if(on) vx++; x.p.classList.toggle("on",on); });
   const el=$("#sX"); if(el) el.textContent=vx+"/"+xedges.length; const sn=$("#sN"); if(sn) sn.textContent=all.filter(n=>n.vis).length+"/"+all.length;
-  updateLanes(); drawMini(); renderInsp(); applySelFocus(); const gh=$("#ghost"); if(gh) gh.classList.toggle("off",!!DATA.open);
+  updateLanes(); drawMini(); renderInsp(); applySelFocus(); const gh=$("#ghost"); if(gh) gh.classList.toggle("off",!(introStage===1&&!DATA.open));
 }
 function toggle(n){
   if(!n.kids.length){ ping(n); if(!isMobile()) focusOn(n); return; }
@@ -590,9 +590,9 @@ function toggle(n){
   else focusOn(n);
 }
 function hideHints(){ $("#hint").classList.add("hide"); $("#mhint").classList.add("hide"); }
-function expandAll(){ all.forEach(n=>{ if(n.kids.length) n.open=true; }); hideHints(); refresh(null); if(!isMobile()) fit(); }
+function expandAll(){ introStage=2; all.forEach(n=>{ if(n.kids.length) n.open=true; }); hideHints(); refresh(null); if(!isMobile()) fit(); }
 function openSub(n){ (function r(m){ if(m.kids.length){ m.open=true; m.kids.forEach(r); } })(n); hideHints(); refresh(n); if(!isMobile()) reveal([n,...descendants(n)]); }
-function reset(){ closeDesc(DATA); DATA.open=false; sel=null; clearRelTags(); all.forEach(n=>{ n.el.classList.remove("sel"); n.mel.classList.remove("sel"); }); closeInsp(); $("#hint").classList.remove("hide"); $("#mhint").classList.remove("hide"); refresh(null); if(isMobile()) scrollTo({top:0,behavior:"smooth"}); else home(); }
+function reset(){ closeDesc(DATA); DATA.open=false; sel=null; clearRelTags(); introStage=isMobile()?2:0; if(!isMobile()) $("#hint").innerHTML=icon("MousePointerClick",2)+"Haz clic en la Fragmentación Territorial para ver la red"; all.forEach(n=>{ n.el.classList.remove("sel"); n.mel.classList.remove("sel"); }); closeInsp(); $("#hint").classList.remove("hide"); $("#mhint").classList.remove("hide"); refresh(null); if(isMobile()) scrollTo({top:0,behavior:"smooth"}); else home(); }
 
 /* ============ ESCRITORIO: nodos, conectores del árbol, enlaces entre ramas, carriles ============ */
 const stage=$("#stage"), world=$("#world"), NS="http://www.w3.org/2000/svg", LK=$("#links");
@@ -616,7 +616,10 @@ all.forEach(n=>{
   e.innerHTML=`<div class="glare"></div><div class="wm">${icon(n.i,1.2)}</div><div class="tile">${icon(n.i)}</div><div class="txt"><span class="id">${n.depth===0?"FENÓMENO CENTRAL":"VAR "+n.code}${xb}${n.key==="hig"?`<span class="xb" title="Abre la evolución histórica">${icon("History",2.2)}historia</span>`:""}</span><span class="lb">${n.depth===0?n.t:n.s}</span></div>${n.kids.length?`<div class="cnt"><span>${n.kids.length}</span>${icon("ChevronRight",2.4)}</div>`:""}`;
   e.title=n.t; n.el=e; world.appendChild(e);
   if(n.depth===0) e.classList.add("on");
-  e.addEventListener("click",ev=>{ ev.stopPropagation(); if(moved) return; if(n.key==="may") setTimeout(preloadHist,900); if(n.key!=="hig") closeHist(); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig"){ if(hpOpen) closeHist(); else setTimeout(openHist,550); } });
+  e.addEventListener("click",ev=>{ ev.stopPropagation(); if(moved) return;
+    if(n===DATA&&introStage===0&&!isMobile()){ introStage=1; ripple(n); select(n); $("#hint").innerHTML=icon("MousePointerClick",2)+"Haz clic otra vez en la Fragmentación Territorial para ver los 3 problemas"; refresh(null); zoomTo(all,2400); return; }
+    if(n===DATA&&introStage===1) introStage=2;
+    if(n.key==="may") setTimeout(preloadHist,900); if(n.key!=="hig") closeHist(); ripple(n); select(n); toggle(n); setTimeout(()=>pulseFrom(n),n.open?520:120); if(n.key==="hig"){ if(hpOpen) closeHist(); else setTimeout(openHist,550); } });
   e.addEventListener("mouseenter",()=>focusLine(n)); e.addEventListener("mouseleave",()=>focusLine(null));
   e.addEventListener("mousemove",ev=>{ const r=e.getBoundingClientRect(); e.style.setProperty("--mx",((ev.clientX-r.left)/T.k)+"px"); e.style.setProperty("--my",((ev.clientY-r.top)/T.k)+"px"); });
   if(n.parent){
@@ -716,7 +719,7 @@ function openSheet(n){ $("#sheet").innerHTML=inspHTML(n); bindAct($("#sheet")); 
 function closeSheet(){ $("#sheet").classList.remove("show"); $("#sheetbg").classList.remove("show"); }
 $("#sheetbg").onclick=closeSheet;
 function goNode(n){
-  hideHints(); for(let p=n.parent;p;p=p.parent) p.open=true; select(n); refresh(null);
+  introStage=2; hideHints(); for(let p=n.parent;p;p=p.parent) p.open=true; select(n); refresh(null);
   if(isMobile()) setTimeout(()=>{ n.mel.scrollIntoView({block:"center",behavior:"smooth"}); ping(n); },450);
   else setTimeout(()=>{ focusOn(n); ping(n); },480);
 }
@@ -761,7 +764,7 @@ function propagate(start){
     front=nxt; lv++;
   }
 }
-function runProp(n){ const start=n||sel||DATA; if(!DATA.open){ DATA.open=true; hideHints(); refresh(DATA); if(!isMobile()) reveal([DATA,...DATA.kids]); setTimeout(()=>propagate(DATA),950); } else propagate(start); }
+function runProp(n){ const start=n||sel||DATA; introStage=2; if(!DATA.open){ DATA.open=true; hideHints(); refresh(DATA); if(!isMobile()) reveal([DATA,...DATA.kids]); setTimeout(()=>propagate(DATA),950); } else propagate(start); }
 $("#bProp").onclick=()=>runProp();
 
 /* ============ Evolución histórica: panel pequeño sobre Higiene estatal (solo 1900 y 1972) ============ */
@@ -842,7 +845,7 @@ const zoom=d3.zoom().scaleExtent([.12,2.5]).clickDistance(5)
 d3.select(stage).call(zoom).on("dblclick.zoom",null).on("pointerdown.t",()=>{ startT=T; });
 const sSel=()=>d3.select(stage);
 function goto(t,ms=DUR){ sSel().transition().duration(ms).ease(d3.easeCubicInOut).call(zoom.transform,t); }
-const rootT=()=>{ const b=bbox(all), pad={l:padL(),r:60,t:100,b:90}, k=Math.min((W-pad.l-pad.r)/(b.x1-b.x0+80),(H-pad.t-pad.b)/(b.y1-b.y0+80),1);
+const rootT=()=>{ if(introStage===0&&!isMobile()) return d3.zoomIdentity.translate(W/2,H/2).scale(1.1); const b=bbox(all), pad={l:padL(),r:60,t:100,b:90}, k=Math.min((W-pad.l-pad.r)/(b.x1-b.x0+80),(H-pad.t-pad.b)/(b.y1-b.y0+80),1);
   return d3.zoomIdentity.translate(pad.l+(W-pad.l-pad.r-(b.x1-b.x0)*k)/2-b.x0*k,pad.t+(H-pad.t-pad.b-(b.y1-b.y0)*k)/2-b.y0*k).scale(k); };
 function home(){ goto(rootT()); }
 function bbox(ns){ let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; ns.forEach(n=>{ x0=Math.min(x0,n.x); x1=Math.max(x1,n.x+n.w); y0=Math.min(y0,n.y-n.h/2); y1=Math.max(y1,n.y+n.h/2); }); return {x0,y0,x1,y1}; }
