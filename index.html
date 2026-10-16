@@ -56,8 +56,14 @@
 
   .lane{display:none!important}
   /* enlaces entre ramas (conexiones reales que cruzan el mapa): salen por arriba/abajo de la tarjeta, con degradado entre los colores de las dos ramas */
-  .xl{fill:none;stroke-width:2.6;stroke-dasharray:7 6;stroke-linecap:round;opacity:0;transition:opacity .5s .4s,stroke-width .2s;animation:xflow 1.2s linear infinite}
-  .xl.on{opacity:.85}
+  .xl{fill:none;stroke-width:2.2;stroke-dasharray:7 6;stroke-linecap:round;opacity:0;transition:opacity .5s .4s,stroke-width .2s;animation:xflow 1.2s linear infinite}
+  .xl.on{opacity:.5}
+  .xl.sel{opacity:1!important;stroke-width:4.4;filter:drop-shadow(0 0 6px rgba(255,255,255,.45))}
+  .xl.dimS{opacity:.1!important}
+  .node.dimS{opacity:.2}
+  .rtag{position:absolute;z-index:7;display:flex;align-items:center;gap:6px;padding:4px 11px 4px 8px;border-radius:14px;background:#000;border:1px solid var(--c);color:var(--c);font:500 11px var(--mono);letter-spacing:.9px;text-transform:uppercase;white-space:nowrap;pointer-events:none;animation:rtin .7s cubic-bezier(.2,1.4,.3,1) both}
+  .rtag svg{width:13px;height:13px}
+  @keyframes rtin{from{opacity:0;transform:translateY(10px) scale(.6)}}
   .xl.hot{opacity:1;stroke-width:4}
   .xh{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:help}
   #tip{position:fixed;z-index:70;pointer-events:none;opacity:0;transform:translate(14px,14px);transition:opacity .15s;max-width:300px;padding:10px 12px;background:#0a0a0a;border:1px solid var(--line2);border-radius:12px;font:400 12.5px/1.35 var(--sans);color:#ddd}
@@ -164,7 +170,12 @@
   #hint svg{width:16px;height:16px;flex:none}
   #hint.hide{opacity:0}
   @keyframes hb{50%{transform:translate(-50%,-6px)}}
-  #legend{position:fixed;left:20px;bottom:20px;z-index:15;width:290px;display:flex;flex-direction:column;gap:3px;padding:12px;background:rgba(6,6,6,.94);border:1px solid var(--line);border-radius:14px}
+  #legend{position:fixed;left:16px;bottom:16px;z-index:15;display:flex;flex-direction:column;gap:2px;padding:8px;background:rgba(6,6,6,.9);border:1px solid var(--line);border-radius:14px;width:auto}
+  #legend:not(.open) h4,#legend:not(.open) .key,#legend:not(.open) #stat,#legend:not(.open) .li span,#legend:not(.open) .li b{display:none}
+  #legend.open{width:250px;padding:12px}
+  #legend .li{padding:4px}
+  .lt{display:grid;place-items:center;width:30px;height:30px;margin:0 0 4px;border-radius:9px;background:#111;border:1px solid var(--line2);color:#bbb;cursor:pointer}
+  .lt:hover{background:#1a1a1a;color:#fff}.lt svg{width:15px;height:15px}
   #legend h4{display:flex;align-items:center;gap:7px;font:500 10px var(--mono);letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin:4px 4px 5px}
   #legend h4 svg{width:13px;height:13px}#legend h4:not(:first-child){margin-top:10px}
   .li{display:flex;align-items:center;gap:10px;padding:5px 6px;border-radius:9px;font:400 12.5px var(--sans);color:#d0d0d0;cursor:pointer;transition:background .15s}
@@ -177,22 +188,22 @@
   #stat{display:flex;gap:8px;margin:8px 2px 2px}
   #stat div{flex:1;border:1px solid var(--line);border-radius:9px;padding:7px 9px;background:#0b0b0b}
   #stat b{display:block;font:500 15px var(--mono);color:#fff}#stat span{font:400 10px var(--sans);color:var(--mut)}
-  #mini{position:fixed;right:20px;bottom:20px;z-index:15;width:230px;height:140px;background:#060606;border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer}
+  #mini{position:fixed;right:16px;bottom:16px;z-index:15;width:170px;height:104px;background:#060606;border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer}
   #mini svg{width:100%;height:100%}
   #mini .vp{fill:rgba(255,255,255,.07);stroke:#fff;stroke-width:1.5;vector-effect:non-scaling-stroke}
-  #zoom{position:fixed;right:20px;bottom:172px;z-index:15;display:flex;flex-direction:column;gap:6px}
+  #zoom{position:fixed;right:16px;bottom:132px;z-index:15;display:flex;flex-direction:column;gap:6px}
   #zoom .btn{width:38px;padding:0}
-  #insp{position:fixed;right:20px;top:76px;width:330px;max-height:calc(100vh - 100px);overflow:auto;z-index:18;padding:18px;background:#080808;border:1px solid var(--line2);border-radius:16px;
+  #insp{position:fixed;right:16px;top:70px;width:262px;max-height:calc(100vh - 230px);overflow:auto;z-index:18;padding:14px;background:#080808;border:1px solid var(--line2);border-radius:16px;
     opacity:0;transform:translateX(12px);pointer-events:none;transition:opacity .25s,transform .25s;user-select:text;-webkit-user-select:text}
   #insp.show{opacity:1;transform:none;pointer-events:auto}
   #iClose,#cClose{position:absolute;right:10px;top:10px;width:32px;height:32px;border-radius:8px;background:none;border:0;color:var(--mut);cursor:pointer;display:grid;place-items:center}
   #iClose:hover,#cClose:hover{background:#171717;color:#fff}#iClose svg,#cClose svg{width:16px;height:16px}
 
   .ih{display:flex;align-items:center;gap:13px;padding-right:26px}
-  .ih .it{flex:none;width:54px;height:54px;border-radius:15px;display:grid;place-items:center;background:var(--c)}
-  .ih .it svg{width:30px;height:30px}
+  .ih .it{flex:none;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--c)}
+  .ih .it svg{width:24px;height:24px}
   .ih .ic{font:500 10.5px var(--mono);letter-spacing:1.2px;color:var(--mut);text-transform:uppercase}
-  .ih h2{font:700 17px/1.22 var(--sans);margin-top:4px}
+  .ih h2{font:700 14.5px/1.22 var(--sans);margin-top:3px}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
   .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;border-radius:20px;font:500 11.5px var(--sans);color:#ddd;border:1px solid color-mix(in srgb,var(--c) 50%,#000);background:color-mix(in srgb,var(--c) 10%,#000)}
   .chip i{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--c)}.chip i svg{width:11px;height:11px}
@@ -203,17 +214,17 @@
   .ipath div::after{content:"";position:absolute;left:7px;top:16px;bottom:-1px;width:1px;background:var(--line2)}
   .ipath div:last-child::after{display:none}
   .ipath div:last-child{color:#fff;font-weight:600;padding-bottom:0}
-  .rel{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:10px;cursor:pointer;font:400 12.5px/1.25 var(--sans);color:#d4d4d4;transition:background .15s}
-  .rel:hover{background:#151515}.rel .ri{width:30px;height:30px;border-radius:9px}.rel .ri svg{width:17px;height:17px}
+  .rel{display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:10px;cursor:pointer;font:400 12px/1.25 var(--sans);color:#d4d4d4;transition:background .15s}
+  .rel:hover{background:#151515}.rel .ri{width:26px;height:26px;border-radius:8px}.rel .ri svg{width:15px;height:15px}
   .rel small{margin-left:auto;font:400 10px var(--mono);color:var(--dim);flex:none}
   .rel.hid{opacity:.6}
   .istats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .istats div{border:1px solid var(--line);border-radius:11px;padding:10px;background:#0c0c0c}
+  .istats div{border:1px solid var(--line);border-radius:10px;padding:7px 8px;background:#0c0c0c}
   .istats svg{width:15px;height:15px;color:var(--c);margin-bottom:6px}
-  .istats b{display:block;font:500 20px var(--mono);color:#fff}.istats span{font:400 10.5px var(--sans);color:var(--mut)}
-  .iact{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}.iact .btn{flex:1;padding:0 8px}
+  .istats b{display:block;font:500 16px var(--mono);color:#fff}.istats span{font:400 10.5px var(--sans);color:var(--mut)}
+  .iact{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}.iact .btn{flex:1;padding:0 8px;height:34px;font-size:12px}
 
-  #ctx{position:fixed;left:20px;top:76px;width:380px;max-height:calc(100vh - 480px);min-height:240px;overflow:auto;z-index:19;padding:20px 20px 18px;background:#080808;border:1px solid var(--line2);border-radius:16px;
+  #ctx{position:fixed;left:16px;top:70px;width:310px;max-height:calc(100vh - 480px);min-height:240px;overflow:auto;z-index:19;padding:20px 20px 18px;background:#080808;border:1px solid var(--line2);border-radius:16px;
     opacity:0;transform:translateX(-12px);pointer-events:none;transition:opacity .25s,transform .25s;user-select:text;-webkit-user-select:text}
   #ctx.show{opacity:1;transform:none;pointer-events:auto}
   #ctx .ch,.ctxp .ch{display:flex;align-items:center;gap:12px;padding-right:28px}
@@ -230,7 +241,7 @@
 
   @media (max-width:1180px) and (min-width:901px){
     #brand p{display:none} .search{width:200px} #mini{display:none} #zoom{bottom:20px} #legend{width:auto;padding:8px} #legend .li span,#legend h4,#legend .key,#legend b,#stat{display:none}
-    #insp{width:290px} #ctx{width:320px}
+    #insp{width:240px} #ctx{width:280px}
   }
 
   /* =========================== MÓVIL =========================== */
@@ -509,18 +520,19 @@ function refresh(origin){
   });
   let vx=0; xedges.forEach(x=>{ const on=x.s.vis&&x.t.vis; if(on) vx++; x.p.classList.toggle("on",on); });
   const el=$("#sX"); if(el) el.textContent=vx+"/"+xedges.length; const sn=$("#sN"); if(sn) sn.textContent=all.filter(n=>n.vis).length+"/"+all.length;
-  updateLanes(); drawMini(); renderInsp();
+  updateLanes(); drawMini(); renderInsp(); applySelFocus();
 }
 function toggle(n){
-  if(!n.kids.length){ ping(n); return; }
+  if(!n.kids.length){ ping(n); if(!isMobile()) focusOn(n); return; }
   if(n.open){ closeDesc(n); n.open=false; } else n.open=true;
   hideHints(); refresh(n);
-  if(n.open){ if(isMobile()) setTimeout(()=>n.kids[0].mel.scrollIntoView({block:"nearest",behavior:"smooth"}),420); else reveal([n,...n.kids]); }
+  if(isMobile()){ if(n.open) setTimeout(()=>n.kids[0].mel.scrollIntoView({block:"nearest",behavior:"smooth"}),420); }
+  else focusOn(n);
 }
 function hideHints(){ $("#hint").classList.add("hide"); $("#mhint").classList.add("hide"); }
 function expandAll(){ all.forEach(n=>{ if(n.kids.length) n.open=true; }); hideHints(); refresh(null); if(!isMobile()) fit(); }
 function openSub(n){ (function r(m){ if(m.kids.length){ m.open=true; m.kids.forEach(r); } })(n); hideHints(); refresh(n); if(!isMobile()) reveal([n,...descendants(n)]); }
-function reset(){ closeDesc(DATA); DATA.open=false; sel=null; all.forEach(n=>{ n.el.classList.remove("sel"); n.mel.classList.remove("sel"); }); closeInsp(); $("#hint").classList.remove("hide"); $("#mhint").classList.remove("hide"); refresh(null); if(isMobile()) scrollTo({top:0,behavior:"smooth"}); else home(); }
+function reset(){ closeDesc(DATA); DATA.open=false; sel=null; clearRelTags(); all.forEach(n=>{ n.el.classList.remove("sel"); n.mel.classList.remove("sel"); }); closeInsp(); $("#hint").classList.remove("hide"); $("#mhint").classList.remove("hide"); refresh(null); if(isMobile()) scrollTo({top:0,behavior:"smooth"}); else home(); }
 
 /* ============ ESCRITORIO: nodos, conectores del árbol, enlaces entre ramas, carriles ============ */
 const stage=$("#stage"), world=$("#world"), NS="http://www.w3.org/2000/svg", LK=$("#links");
@@ -636,9 +648,9 @@ function renderInsp(){
   const box=$("#insp"); if(!sel){ box.classList.remove("show"); return; }
   $("#ibody").innerHTML=inspHTML(sel); bindAct($("#ibody")); box.classList.add("show");
 }
-function select(n){ sel=n; all.forEach(m=>{ m.el.classList.toggle("sel",m===n); m.mel.classList.toggle("sel",m===n); }); renderInsp(); }
+function select(n){ sel=n; all.forEach(m=>{ m.el.classList.toggle("sel",m===n); m.mel.classList.toggle("sel",m===n); }); clearRelTags(); renderInsp(); applySelFocus(); }
 function closeInsp(){ $("#insp").classList.remove("show"); }
-$("#iClose").onclick=()=>{ sel=null; all.forEach(m=>{ m.el.classList.remove("sel"); m.mel.classList.remove("sel"); }); closeInsp(); };
+$("#iClose").onclick=()=>{ sel=null; all.forEach(m=>{ m.el.classList.remove("sel"); m.mel.classList.remove("sel"); }); closeInsp(); clearRelTags(); applySelFocus(); };
 stage.addEventListener("click",()=>{ if(!moved){ $("#iClose").onclick(); } });
 function openSheet(n){ $("#sheet").innerHTML=inspHTML(n); bindAct($("#sheet")); $("#sheet").classList.add("show"); $("#sheetbg").classList.add("show"); }
 function closeSheet(){ $("#sheet").classList.remove("show"); $("#sheetbg").classList.remove("show"); }
@@ -646,7 +658,7 @@ $("#sheetbg").onclick=closeSheet;
 function goNode(n){
   hideHints(); for(let p=n.parent;p;p=p.parent) p.open=true; select(n); refresh(null);
   if(isMobile()) setTimeout(()=>{ n.mel.scrollIntoView({block:"center",behavior:"smooth"}); ping(n); },450);
-  else setTimeout(()=>{ const k=Math.max(T.k,.9); goto(d3.zoomIdentity.translate(W*.4-(n.x+n.w/2)*k,H/2-n.y*k).scale(k)); ping(n); },480);
+  else setTimeout(()=>{ focusOn(n); ping(n); },480);
 }
 
 /* ============ Propagación a lo largo de las flechas reales (árbol y enlaces entre ramas) ============ */
@@ -729,7 +741,7 @@ function goto(t,ms=DUR){ sSel().transition().duration(ms).ease(d3.easeCubicInOut
 const rootT=()=>d3.zoomIdentity.translate(W<1000?W*.2:W*.17,H*.5+24).scale(W<1000?.75:1);
 function home(){ goto(rootT()); }
 function bbox(ns){ let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9; ns.forEach(n=>{ x0=Math.min(x0,n.x); x1=Math.max(x1,n.x+n.w); y0=Math.min(y0,n.y-n.h/2); y1=Math.max(y1,n.y+n.h/2); }); return {x0,y0,x1,y1}; }
-const padR=()=>$("#insp").classList.contains("show")&&W>1180?360:70;
+const padR=()=>$("#insp").classList.contains("show")&&W>900?(W>1180?300:270):70;
 function fit(ns){ const v=ns||all.filter(n=>n.vis), b=bbox(v), pad={l:70,r:padR(),t:110,b:100};
   const k=Math.min((W-pad.l-pad.r)/(b.x1-b.x0+60),(H-pad.t-pad.b)/(b.y1-b.y0+80),1.15);
   goto(d3.zoomIdentity.translate(pad.l+(W-pad.l-pad.r-(b.x1-b.x0)*k)/2-b.x0*k,pad.t+(H-pad.t-pad.b-(b.y1-b.y0)*k)/2-b.y0*k).scale(k)); }
@@ -738,6 +750,34 @@ function reveal(ns){ const b=bbox(ns), pad={l:60,r:padR(),t:110,b:110};
   let tx=T.x, ty=T.y; const L=b.x0*k+tx, R=b.x1*k+tx, Tp=b.y0*k+ty, B=b.y1*k+ty;
   if(L<pad.l) tx+=pad.l-L; else if(R>W-pad.r) tx-=R-(W-pad.r); if(Tp<pad.t) ty+=pad.t-Tp; else if(B>H-pad.b) ty-=B-(H-pad.b);
   if(k!==T.k||tx!==T.x||ty!==T.y) goto(d3.zoomIdentity.translate(tx,ty).scale(k),750); }
+/* zoom lento y suave hacia lo que se toca (y hacia sus relaciones entre ramas) */
+function zoomTo(ns,ms=1600){
+  const b=bbox(ns), pad={l:70,r:padR(),t:100,b:90};
+  const k=Math.max(.3,Math.min((W-pad.l-pad.r)/(b.x1-b.x0+140),(H-pad.t-pad.b)/(b.y1-b.y0+140),1.3));
+  goto(d3.zoomIdentity.translate(pad.l+(W-pad.l-pad.r-(b.x1-b.x0)*k)/2-b.x0*k,pad.t+(H-pad.t-pad.b-(b.y1-b.y0)*k)/2-b.y0*k).scale(k),ms);
+}
+function clearRelTags(){ document.querySelectorAll(".rtag").forEach(t=>t.remove()); }
+function showRelTags(n){
+  clearRelTags();
+  n.xs.forEach(x=>{ const o=x.s===n?x.t:x.s; if(!(x.s.vis&&x.t.vis)) return;
+    const txt=!x.dir?"relacionada":(x.s===n?"efecto de esta":"causa de esta"), ic=!x.dir?"Link":(x.s===n?"ArrowDownToLine":"ArrowUpFromLine");
+    const t=document.createElement("div"); t.className="rtag"; t.style.setProperty("--c",o.color); t.style.left=o.x+"px"; t.style.top=(o.y-o.h/2-32)+"px"; t.innerHTML=icon(ic,2.2)+txt; world.appendChild(t); });
+}
+function applySelFocus(){
+  const n=sel; all.forEach(m=>m.el.classList.remove("dimS")); xedges.forEach(x=>x.p.classList.remove("sel","dimS"));
+  if(!n||!n.xs.length||isMobile()) return;
+  const keep=new Set([n,n.parent,...n.kids,...n.xs.map(x=>x.s===n?x.t:x.s)]);
+  all.forEach(m=>{ if(m.vis&&!keep.has(m)) m.el.classList.add("dimS"); });
+  xedges.forEach(x=>{ const mine=x.s===n||x.t===n; x.p.classList.toggle("sel",mine); x.p.classList.toggle("dimS",!mine); });
+}
+function focusOn(n){
+  if(isMobile()) return;
+  let changed=false; n.xs.forEach(x=>{ const o=x.s===n?x.t:x.s; if(!o.vis){ for(let p=o.parent;p;p=p.parent){ if(!p.open){ p.open=true; changed=true; } } } });
+  if(changed) refresh(n);
+  const partners=n.xs.map(x=>x.s===n?x.t:x.s);
+  zoomTo([n,...(n.open?n.kids:[]),...(n.parent?[n.parent]:[]),...partners]);
+  applySelFocus(); showRelTags(n);
+}
 $("#bIn").onclick=()=>sSel().transition().duration(300).call(zoom.scaleBy,1.35); $("#bOut").onclick=()=>sSel().transition().duration(300).call(zoom.scaleBy,1/1.35);
 $("#bFit").onclick=()=>fit(); $("#bAll").onclick=expandAll; $("#bReset").onclick=reset;
 addEventListener("resize",()=>{ W=innerWidth; H=innerHeight; updateVP(); });
@@ -760,6 +800,8 @@ $("#legend").innerHTML=`<h4>${icon("Layers",2)}Ramas del sistema</h4>`+branches.
    <div class="key"><svg viewBox="0 0 34 14"><path d="M1 7C9 1 19 13 27 7" stroke="#fff" stroke-width="2" stroke-dasharray="4 4" fill="none" stroke-linecap="round"/><path d="M25 2L33 7L25 12z" fill="#fff"/></svg>Conecta con otra rama</div>
    <div class="key"><svg viewBox="0 0 34 14"><rect x="9" y="1" width="6" height="12" rx="2" fill="${G[1].color}"/><rect x="15" y="1" width="6" height="12" rx="2" fill="${G[3].color}"/></svg>Variable compartida</div>
    <div id="stat"><div><b id="sN">1/41</b><span>Variables</span></div><div><b id="sX">0/${xedges.length}</b><span>Enlaces entre ramas</span></div></div>`;
+$("#legend").insertAdjacentHTML("afterbegin",`<button class="lt" aria-label="Leyenda" title="Ver / ocultar leyenda">${icon("Info",2)}</button>`);
+$("#legend .lt").onclick=()=>$("#legend").classList.toggle("open");
 $("#legend").querySelectorAll(".li").forEach(l=>l.addEventListener("click",()=>{ const b=all[+l.dataset.i]; DATA.open=true; b.open=true; hideHints(); refresh(b); reveal([DATA,b,...b.kids]); select(b); }));
 
 /* ============ Buscador (escritorio y móvil) ============ */
